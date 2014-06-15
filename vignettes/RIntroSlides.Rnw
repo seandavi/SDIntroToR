@@ -1,0 +1,977 @@
+\documentclass{beamer}
+\usetheme{Madrid} % My favorite!
+%\usetheme{Boadilla} % Pretty neat, soft color.
+%\usetheme{default}
+%\usetheme{Warsaw}
+%\usetheme{Bergen} % This template has nagivation on the left
+%\usetheme{Frankfurt} % Similar to the default 
+%with an extra region at the top.
+%\usecolortheme{seahorse} % Simple and clean template
+%\usetheme{Darmstadt} % not so good
+% Uncomment the following line if you want %
+% page numbers and using Warsaw theme%
+% \setbeamertemplate{footline}[page number]
+%\setbeamercovered{transparent}
+%\VignetteIndexEntry{R Intro Slides}
+\setbeamercovered{invisible}
+% To remove the navigation symbols from 
+% the bottom of slides%
+\setbeamertemplate{navigation symbols}{}
+%
+\usepackage{fancyvrb}
+\definecolor{Soutput}{rgb}{0.75,0.19,0.19}
+\definecolor{Sinput}{rgb}{0,0,0}
+\definecolor{Scode}{rgb}{0.75,0.19,0.19}
+\usepackage{graphicx}
+\usepackage{hyperref}
+%\usepackage{bm}         % For typesetting bold math (not \mathbold)
+%\logo{\includegraphics[height=0.6cm]{yourlogo.eps}}
+%
+\title[Introduction to R]{A Not-so-brief Introduction to R}
+\author{Sean Davis\\
+with large contributions by\\
+Naomi Altman and Mark Reimers}
+\institute[NCI, NIH]
+{
+National Cancer Institute \\
+National Institutes of Health\\
+\medskip
+{\emph{sdavis2@mail.nih.gov}}
+}
+\date{June 18, 2014}
+%
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+%\setcounter{tocdepth}{1}
+\DefineVerbatimEnvironment{Sinput}{Verbatim}
+{formatcom = {\color{Sinput}},fontsize=\scriptsize}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}
+{formatcom = {\color{Soutput}},fontsize=\scriptsize}
+\DefineVerbatimEnvironment{Scode}{Verbatim}
+{formatcom = {\color{Scode}},fontsize=\small}
+\begin{frame}
+\titlepage
+\end{frame}
+%
+\begin{frame}
+\tableofcontents[hideallsubsections]
+\end{frame}
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{R Overview}
+%
+\begin{frame}{What is R?}
+  \begin{itemize}
+    \item{A software package}
+    \item{A programming language}
+    \item{A toolkit for developing statistical and analytical tools}
+    \item{An extensive library of statistical and mathematical software and algorithms}
+    \item{A scripting language}
+    \item{\dots}
+  \end{itemize}
+\end{frame}
+%
+\begin{frame}{Why R?}
+  \begin{itemize}
+    \item{R is cross-platform and runs on Windows, Mac, and Linux (as well as more obscure systems).}
+    \item{R provides a vast number of useful statistical tools, many of which have been painstakingly tested.}
+    \item{R produces publication-quality graphics in a variety of formats.}
+    \item{R plays well with FORTRAN, C, and scripts in many languages.}
+    \item{R scales, making it useful for small and large projects.  It is NOT Excel.}
+    \item{R eschews the GUI.}
+  \end{itemize}
+  \begin{block}{Anecdote}
+    I can develop code for analysis on my Mac laptop.  I can then install the \textit{same} code on our 20k core cluster and run it in parallel on 100 samples, monitor the process, and then update a database with R when complete.
+  \end{block}
+\end{frame}
+%
+\begin{frame}{Why Not R?}
+  \begin{itemize}
+    \item{R cannot do everything.}
+    \item{R is not always the ``best'' tool for the job.}
+    \item{R will \textit{not} hold your hand.}
+    \item{The documentation can be opaque.}
+    \item{R can drive you crazy (on a good day) or age you prematurely (on a bad one).}
+    \item{Finding the right package to do the job you want to do can be challenging; worse, some contributed packages are unreliable.}
+    \item{R eschews the GUI.}
+  \end{itemize}
+\end{frame}
+%
+\begin{frame}{R License and the Open Source Ideal}
+  \begin{itemize}
+    \item{R is free!}
+    \item{Distributed under GNU license}
+      \begin{itemize}
+        \item{You may download the source code.}
+        \item{You may modify the source code to your heart's content.}
+        \item{You may distribute the modified source code and even charge money for it, but you must distribute the modified source code under the original GNU license}
+      \end{itemize}
+  \end{itemize}
+  \begin{block}{Take-home Message}
+    This license means that R will always be available, will always be open source, and can grow organically without constraint.
+  \end{block}
+\end{frame}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{R Mechanics}
+%
+\begin{frame}
+\frametitle{Installing R}
+\begin{figure}
+\includegraphics[width=1\textwidth]{images/CRAN-screenshot.png}
+\caption{The \href{http://cran.r-project.org}{CRAN} website, home of the R project.}
+\end{figure}
+\end{frame}
+%
+\begin{frame}[fragile]
+\frametitle{Starting R}
+\begin{itemize}
+  \item{Depends on operating system and interface}
+    \begin{block}{Linux command line}
+      \begin{verbatim}$ R\end{verbatim}
+    \end{block}
+  \item{In this course, we will largely be using a GUI called \textit{RStudio}}
+\end{itemize}
+\end{frame}
+%
+\begin{frame}{The RStudio Interface}
+\includegraphics[width=1\textwidth]{images/RStudio.png}
+\end{frame}
+%
+\begin{frame}[fragile]
+  \frametitle{Getting Started}
+  \begin{itemize}
+    \item{R Commands are either:}
+      \begin{enumerate}
+        \item{Assignments}
+<<assignment>>=
+x = 1
+y <- 2
+@
+        \item{Expressions}
+<<>>=
+1 + pi + sin(3.7)
+@
+      \end{enumerate}
+    \item{The ``<-'' and ``='' are both assignment operators.}
+    \item{The standard R prompt is a ``>'' sign.}
+    \item{If a line is not a complete R command, R will continue the next line with a ``+''.}
+<<>>=
+1 + pi + 
+sin(3.7)
+@     
+  \end{itemize}
+\end{frame}
+%
+\begin{frame}[fragile]
+\frametitle{Rules for Names in R}
+\begin{itemize}
+\item{Any combination of letters, numbers, underscore, and ``.''}
+\item{May not start with numbers, underscore.}
+\item{R is case-sensitive.}
+\end{itemize}
+\begin{block}{Examples}
+\begin{verbatim}
+pi
+x
+camelCaps
+my_stuff
+MY_Stuff
+this.is.the.name.of.the.man
+ABC123
+abc1234asdf
+.hi
+\end{verbatim}
+\end{block}
+\end{frame}
+%
+\section{Resources for Getting Help}
+\begin{frame}[fragile]
+  \frametitle{R Help Functions}
+  \begin{itemize}
+    \item{If you know the name of the function or object on which you want help:}
+<<help1,eval=False>>=
+help(print)
+help('print')
+?print
+@ 
+    \item{If you \textit{do not} know the name of the function or object on which you want help:}
+<<help2,eval=False>>=
+help.search('microarray')
+RSiteSearch('microarray')
+@
+    \item{Many online resources which you will collect over the space of the course}
+  \end{itemize}
+  \begin{block}{Using Help}
+    I strongly recommend using \texttt{help(newfunction)} for all functions that are new or unfamiliar to you.
+  \end{block}
+\end{frame}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Vectors}
+%%%%%%%%%%%%%%%%%%%%
+\subsection{Vectors}
+\begin{frame}[fragile]
+  \frametitle{Vectors}
+  \begin{itemize}
+    \item{In R, even a single value is a vector with length=1.}
+<<vector1>>=
+z = 1
+z
+length(z)
+@ 
+    \item{Vectors can contain numbers, strings (character data), or logical values (TRUE and FALSE)}
+    \item{Vectors cannot contain a mix of types!}
+  \end{itemize}
+  \begin{block}{Character Vectors}
+    Character vectors are entered with each value surrounded by single or double quotes; either is acceptable, but they must match.  They are always displayed by R with double quotes.
+  \end{block}
+\end{frame}
+%
+\begin{frame}[fragile]
+  \frametitle{Vectors}
+  \begin{block}{Example Vectors}
+<<vector2>>=
+# examples of vectors
+c('hello','world')
+c(1,3,4,5,1,2)
+c(1.12341e7,78234.126)
+c(TRUE,FALSE,TRUE,TRUE)
+# note how in the next case the TRUE is converted to "TRUE"
+c(TRUE,'hello')
+@ 
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Regular Sequences}
+<<regularsequences>>=
+# create a vector of integers from 1 to 10
+x = 1:10
+# and backwards
+x = 10:1
+# create a vector of numbers from 1 to 4 skipping by 0.3
+y = seq(1,4,0.3)
+# create a sequence by concatenating two other sequences
+z = c(y,x)
+z
+@ 
+\end{frame}
+%%%%%%%%%%%%
+\subsection{Vector Operations}
+\begin{frame}[fragile]
+  \frametitle{Vector Operations}
+  \begin{itemize}
+    \item{Operations on a single vector are typically done element-by-element}
+    \item{If the operation involves two vectors:}
+      \begin{itemize}
+        \item{Same length: R simply applies the operation to each pair of elements.}
+        \item{Different lengths, but one length a multiple of the other: R reuses the shorter vector as needed}
+        \item{Different lengths, but one length \textit{not} a multiple of the other: R reuses the shorter vector as needed \textit{and} delivers a warning}
+      \end{itemize}
+    \item{Typical operations include multiplication (``*''), addition, subtraction, division, exponentiation (`` \^''), but many operations in R operate on vectors and are then called ``vectorized''.}
+  \end{itemize}
+\end{frame}
+%
+\begin{frame}
+  \frametitle{Summary of Simple Data Types}
+  \begin{center}
+  \begin{tabular}{ c | c }
+    Data type & Stores \\
+    \hline
+    real & floating point numbers\\
+    integer & integers \\
+    complex & complex numbers \\
+    factor & categorical data \\
+    character & strings \\
+    logical & TRUE or FALSE \\
+    NA  & missing \\
+    NULL & empty \\
+    function & function type \\
+    \hline
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Vector Operations}
+<<vectorops>>=
+x = 1:10
+x+x
+y = 7
+x * y
+y = c(1,2,3)
+z = x * y
+length(z)
+z
+@ 
+\end{frame}
+%
+\begin{frame}[fragile]
+  \frametitle{Logical Vectors}
+Logical vectors are vectors composed on only the values \texttt{TRUE} and \texttt{FALSE}.  Note the all-upper-case and no quotation marks.
+<<logicalvectors1>>=
+a = c(TRUE,FALSE,TRUE)
+# we can also create a logical vector from a numeric vector
+# 0 = false, everything else is 1
+b = c(1,0,217)
+d = as.logical(b)
+d
+# test if a and d are the same at every element
+all.equal(a,d)
+# We can also convert from logical to numeric
+as.numeric(a)
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Logical Operators}
+  Some operators like \texttt{<, >, ==, >=, <=, !=} can be used to create logical vectors.
+<<logicaloperators1>>=
+# create a numeric vector
+x = 1:10
+# testing whether x > 5 creates a logical vector
+x > 5
+x <= 5
+x != 5
+x == 5
+# we can also assign the results to a variable
+y = (x == 5)
+y
+@ 
+\end{frame}
+%
+\subsection{Indexing Vectors}
+\begin{frame}[fragile]
+  \frametitle{Indexing Vectors}
+  \begin{itemize}
+    \item{In programming, an index is used to refer to a specific element or set of elements in an vector (or other data structure).}
+    \item{R uses \texttt{[} and \texttt{]} to perform indexing.}
+<<vectorindexing1>>=
+x = seq(0,1,0.1)
+# create a new vector from the 4th element of x
+x[4]
+@ 
+    \item{Indexing can use other vectors for the indexing}
+<<vectorindexing1>>=
+x[c(3,5,6)]
+y = 3:6
+x[y]
+@ 
+\end{itemize}
+\end{frame}
+%
+\begin{frame}[fragile]
+  \frametitle{Indexing Vectors and Logical Vectors}
+  Combining the concept of indexing with the concept of logical vectors results in a very power combination.
+<<vectorindexing2>>=
+# use help('rnorm') to figure out what is happening next
+myvec = rnorm(10)
+# create logical vector that is TRUE where myvec is >0.25
+gt1 = (myvec > 0.25)
+sum(gt1)
+# and use our logical vector to create a vector of myvec values that are >0.25
+myvec[gt1]
+# or <=0.25 using the logical "not" operator, "!"
+myvec[!gt1]
+# shorter, one line approach
+myvec[myvec > 0.25]
+@ 
+\end{frame}
+
+\subsection{String Handling in R}
+\begin{frame}[fragile]
+  \frametitle{Concatenating Strings}
+R uses the \texttt{paste} function to concatenate strings.
+<<stringpaste>>=
+paste("abc","def")
+paste("abc","def",sep="THISSEP")
+paste0("abc","def")
+paste(c("X","Y"),1:10)
+paste(c("X","Y"),1:10,sep="_")
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More String Functions}
+  \begin{itemize}
+    \item{Number of characters in a string}
+<<nchar>>=
+nchar('abc')
+nchar(c('abc','d',123456))
+@ 
+    \item{Extract substrings}
+<<substr>>=
+substr('This is a good sentence.',start=10,stop=15)
+@ 
+    \item{String replacement}
+<<sub>>=
+sub('This','That','This is a good sentence.')
+@ 
+    \item{Finding matching strings}
+<<grep>>=
+grep('bcd',c('abcdef','abcd','bcde','cdef','defg'))
+grep('bcd',c('abcdef','abcd','bcde','cdef','defg'),value=TRUE)
+@ 
+\end{itemize}
+\end{frame}
+
+\subsection{Special Data Types}
+
+\begin{frame}[fragile]
+  \frametitle{Missing Values, AKA ``NA''}
+  R has a special value, ``NA'', that represents a ``missing'' value in a vector or other data structure.  
+<<na>>=
+x = 1:5
+x
+length(x)
+is.na(x)
+x[2] = NA
+x
+length(x)
+is.na(x)
+x[!is.na(x)]
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Factors}
+  \begin{itemize}
+    \item{A factor  is a special type of vector, normally used to hold a categorical variable in many statistical functions.}
+    \item{Such vectors have class ``factor''.}
+    \item{Factors are primarily used in Analysis of Variance (ANOVA).  When a factor is used as a predictor variable, the corresponding indicator variables are created.}
+  \end{itemize}
+  \begin{block}{Note of caution}
+    Factors in R often \textit{appear} to be character vectors when printed, but you will notice that they do not have double quotes around them.  They are stored in R as numbers with a key name, so sometimes you will note that the factor \textit{behaves} like a numeric vector.
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Factors in Practice}
+<<factors1>>=
+# create the character vector
+citizen<-c("uk","us","no","au","uk","us","us","no","au") 
+# convert to factor
+citizenf<-factor(citizen)                                
+citizen				
+citizenf
+# convert factor back to character vector
+as.character(citizenf)
+# convert to numeric vector
+as.numeric(citizenf)
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Factors in Practice}
+<<factors2>>=
+# R stores many data structures as vectors with "attributes" and "class"
+attributes(citizenf)
+class(citizenf)
+# note that after unclassing, we can see the 
+# underlying numeric structure again
+unclass(citizenf)
+table(citizenf)
+@ 
+\end{frame}
+
+\section{Rectangular Data}
+\begin{frame}
+  \frametitle{Matrices and Data Frames}
+  \begin{itemize}
+    \item{A matrix is a rectangular array. It can be viewed as a collection of column vectors all of the same length and the same type (i.e. numeric, character or logical).}
+    \item{A data frame is \textit{also} a rectangular array.  All of the columns must be the same length, but they may be of \textit{different} types.}
+    \item{The rows and columns of a matrix or data frame can be given names.}
+    \item{However these are implemented differently in R; many operations will work for one but not both.}
+  \end{itemize}
+\end{frame}
+
+\subsection{Matrix Operations}
+\begin{frame}[fragile]
+  \frametitle{Matrix Operations}
+<<matrices1>>=
+x<-1:10 
+y<-rnorm(10)
+# make a matrix by column binding two numeric vectors
+mat<-cbind(x,y)
+mat
+# And the names of the rows and columns
+rownames(mat)
+colnames(mat)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Matrix Operations}
+  Indexing for matrices works as for vectors except that we now need to include both the row and column (in that order).
+<<matrices2>>=
+# The 2nd element of the 1st row of mat
+mat[1,2]
+# The first ROW of mat
+mat[1,]
+# The first COLUMN of mat
+mat[,1]
+# and all elements of mat that are > 4; note no comma
+mat[mat>4]
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Matrix Operations}
+<<matrices3>>=
+# create a matrix with 2 columns and 10 rows
+# filled with random normal deviates
+m = matrix(rnorm(20),nrow=10)
+# multiply all values in the matrix by 20
+m = m*20
+# and add 100 to the first column of m
+m[,1] = m[,1] + 100
+# summarize m
+summary(m)
+@ 
+\end{frame}
+
+\subsection{Data Frames}
+\begin{frame}[fragile]
+  \frametitle{Matrices Versus Data Frames}
+<<matricesvsdataframes>>=
+mat<-cbind(x,y)
+class(mat[,1])			
+z = paste0('a',1:10)
+tab<-cbind(x,y,z)
+class(tab)
+mode(tab[,1])
+head(tab,4)
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Matrices Versus Data Frames}
+<<matricesvsdataframes>>=
+tab<-data.frame(x,y,z)
+class(tab)
+head(tab)
+mode(tab[,1])
+class(tab[,3])
+rownames(tab)			
+rownames(tab)<-paste0("row",1:10)
+rownames(tab)
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Data Frames, Continued}
+  \begin{itemize}
+    \item{Data frame columns can be refered to by name using the ``dollar sign'' operator}
+<<dataframecolumns>>=
+tab$x
+tab$y
+@ 
+    \item{Column names can be set, which can be useful for referring to data later}
+<<dataframecolumns>>=
+colnames(tab)
+colnames(tab) = paste0('col',1:3)
+@ 
+  \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Exercise: Subsetting Data Frames}
+Try these 
+<<subsettingdf,results=hide>>=
+ncol(tab)
+nrow(tab)
+dim(tab)
+summary(tab)
+tab[1:3,]
+tab[,2:3]
+tab[,1]>7
+tab[tab[,1]>7,]
+tab[tab[,1]>7,3]
+tab[tab[,1]>7,2:3]
+tab[tab$x>7,3]
+tab$z[tab$x>3]
+@ 
+\end{frame}
+
+\subsection{Basic Textual Input and Output}
+\begin{frame}[fragile]
+  \frametitle{Reading and Writing Data Frames to Disk}
+  \begin{itemize}
+    \item{The \texttt{write.table} function and friends write a data.frame or matrix to disk as a text file.}
+<<dfio1>>=
+write.table(tab,file='tab.txt',sep="\t",col.names=TRUE)
+# remove tab from the workspace
+rm(tab)
+# make sure it is gone
+ls(pattern="tab")
+@ 
+    \item{The \texttt{read.table} function and friends read a data.frame or matrix from a text file.}
+<<dfio1>>=
+tab = read.table('tab.txt',sep="\t",header=TRUE)
+head(tab,3)
+@ 
+\end{itemize}
+\end{frame}
+
+\subsection{Lists and Objects}
+\begin{frame}
+  \frametitle{Lists}
+  \begin{itemize}
+    \item{A list is a collection of objects that may be the same or different types.}
+    \item{The objects generally have names, and may be indexed either by name (e.g. my.list\$name3) or component number (e.g. my.list[[3]]).}
+    \item{A data frame is a list of matched column vectors.}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lists in Practice}
+  \begin{itemize}
+    \item{Create a list, noting the different data types involved.}
+<<lists>>=
+a = list(1,"b",c(1,2,3))
+a
+length(a)
+class(a)
+a[[3]]
+@ 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Lists in Practice}
+  \begin{itemize}
+    \item{A data frame \textit{is} a list.}
+<<lists2>>=
+# test if our friend "tab" is a list
+is.list(tab)
+tab[[2]]
+names(tab)
+@ 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Summary of Simple Data Types}
+  \begin{center}
+  \begin{tabular}{ c | c }
+    Data type & Stores \\
+    \hline
+    real & floating point numbers\\
+    integer & integers \\
+    complex & complex numbers \\
+    factor & categorical data \\
+    character & strings \\
+    logical & TRUE or FALSE \\
+    NA  & missing \\
+    NULL & empty \\
+    function & function type \\
+    \hline
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Summary of Aggregate Data Types}
+  \begin{center}
+  \begin{tabular}{ c | c }
+    Data type & Stores \\
+    \hline
+    vector & one-dimensional data, single data type \\
+    matrix & two-dimensional data, single data type \\
+    data frame & two-dimensional data, multiple data types \\
+    list & list of data types, not all need to be the same type \\
+    object & a list with attributes and potentially slots and methods \\
+    \hline
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\section{Plotting and Graphics}
+\subsection{Basics of Plotting}
+
+\begin{frame}[fragile]
+  \frametitle{Basic Plot Functions}
+  \begin{itemize}
+    \item{The command \texttt{plot(x,y)} will plot vector x as the independent variable and vector y as the dependent variable.}
+    \item{Within the command line, you can specify the title of the graph, the name of the x-axis, and the name of the y-axis.}
+    \begin{itemize}
+      \item{main='title'}
+      \item{xlab='name of x axis'}
+      \item{ylab='name of y axis'}
+    \end{itemize}
+    \item{The command \texttt{lines(x,y)} adds a line segment to the plot.}
+    \item{The command \texttt{points(x,y)} adds points to the plot.}
+    \item{A legend can be created using \texttt{legend}.}
+  \end{itemize}
+  \begin{block}{demo}
+<<eval=false>>=
+demo(graphics)
+@ 
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Simple Plotting Example}
+  Try this yourself:
+<<plots,results=hide>>=
+x = 1:100
+y = rnorm(100,3,1) # 100 random normal deviates with mean=3, sd=1
+plot(x,y)
+plot(x,y,main='My First Plot')
+# change point type
+plot(x,y,pch=3)
+# change color
+plot(x,y,pch=4,col=2)
+# draw lines between points
+lines(x,y,col=3)
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More Plotting}
+<<plots2,results=hide>>=
+z=sort(y)
+# plot a sorted variable vs x
+plot(x,z,main='Random Normal Numbers',
+xlab='Index',ylab='Random Number')
+# another example
+plot(-4:4,-4:4)	
+# and add a point at (0,2) to the plot
+points(0,2,pch=6,col=12)
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More Plotting}
+<<plots2,results=hide>>=
+# check margin and outer margin settings
+par(c("mar", "oma")) 
+plot(x,y)
+par(oma=c(1,1,1,1))  # set outer margin
+plot(x,y)
+par(mar=c(2.5,2.1,2.1,1)) # set margin
+plot(x,y)
+# A basic histogram
+hist(z, main="Histogram",
+	sub="Random normal")
+# A "density" plot
+plot(density(z), main="Density plot",
+	sub="Random normal")
+# A smaller "bandwidth" to capture more detail
+plot(density(z, adjust=0.5),
+  sub="smaller bandwidth")
+@ 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Graphics Devices and Saving Plots}
+  \begin{itemize}
+    \item{to make a plot directly to a file use: \texttt{png()}, \texttt{postscript()}, etc.}
+    \item{R can have multiple graphics ``devices'' open.}
+    \begin{itemize}
+      \item{To see a list of active devices: \texttt{dev.list()}}
+      \item{To close the most recent device: \texttt{dev.off()}}
+      \item{To close device 5: \texttt{dev.off(5)}}
+      \item{To use device 5: \texttt{dev.set(5)}}
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{More Plotting}
+  \begin{itemize}
+    \item{Save a png image to a file}
+<<plotssave1,results=hide>>=
+png(file="myplot.png",width=480,height=480)
+plot(density(z,adjust=2.0),sub="larger bandwidth")
+dev.off()
+@
+    \item{On your own, save a pdf to a file.  NOTE: The dimensions in \texttt{pdf()} are in \textit{inches}}
+    \item{Multiple plots on the same page:}
+<<mfrow,results=hide>>=
+par(mfrow=c(2,1))
+plot(density(z,adjust=2.0),sub="larger bandwidth")
+hist(z)
+# use dev.off() to turn off the two-row plotting
+@ 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{R Graphics Galleries and Resources}
+  Visit these sites for some ideas.
+  \begin{itemize}
+    \item{\url{http://www.sr.bham.ac.uk/~ajrs/R/r-gallery.html}}
+    \item{\url{http://gallery.r-enthusiasts.com/}}
+    \item{\url{http://cran.r-project.org/web/views/Graphics.html}}
+  \end{itemize}
+\end{frame}
+
+\section{Control Structures, Looping, and Applying}
+\subsection{Control Structures and Looping}
+\begin{frame}[fragile]
+  \frametitle{Control Structures in R}
+  \begin{itemize}
+    \item{R has multiple types of control structures that allows for sequential evaluation of statements.}
+    \item{For loops}
+\begin{verbatim}
+for (x in set) {operations}
+\end{verbatim}
+
+    \item{while loops}
+
+\begin{verbatim}
+while (x in condition){operations}
+\end{verbatim} 
+    \item{If statements (conditional)}
+\begin{verbatim}
+if (condition) {
+some operations 
+ } else { other operations }
+\end{verbatim} 
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Control Structure and Looping Examples}
+<<controlloop1,results=hide>>=
+x<-1:9
+length(x)
+# a simple conditional then two expressions
+if (length(x)<=10) {
+   x<-c(x,10:20);print(x)}
+# more complex 
+if (length(x)<5) {
+	print(x)
+} else {
+	print(x[5:20])
+}			
+# print the values of x, one at a time
+for (i in x) print(i) 
+for(i in x) i	# note R will not echo in a loop
+@ 
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Control Structure and Looping Examples}
+<<controlloop2,results=hide>>=
+# loop over a character vector
+y<-c('a','b','hi there')			
+for (i in y) print(i)
+
+# and a while loop
+j<-1				
+while(j<10) { # do this while j<10		
+  print(j)
+  j<-j+2} # at each iteration, increase j by 2
+@ 
+\end{frame}
+
+\subsection{Applying}
+\begin{frame}[fragile]
+  \frametitle{Why Does R Have Apply Functions}
+  \begin{itemize}
+    \item{Often we want to apply the same function to all the rows or columns of a matrix, or all the elements of a list.}
+    \item{We could do this in a loop, but loops take a lot of time in an interpreted language like R.}
+    \item{R has more efficient built-in operators, the apply functions.}
+  \end{itemize}
+  \begin{block}{example}
+    If mat is a matrix and fun is a function (such as mean, var, lm ...) that takes a vector as its argument, then you can:
+    \begin{verbatim}apply(mat,1,fun) # over rows--second argument is 1  	
+apply(mat,2,fun) # over columns--second argument is 2\end{verbatim}
+    In either case, the output is a vector.
+  \end{block}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Apply Function Exercise}
+  \begin{enumerate}
+    \item{Using the matrix and rnorm functions, create a matrix with 20 rows and 10 columns (200 values total) of random normal deviates.}
+    \item{Compute the mean for each row of the matrix.}
+    \item{Compute the median for each column.}
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Related Apply Functions}
+  \begin{itemize}
+    \item{\texttt{lapply(list, function)} applies the function to every element of list}
+    \item{\texttt{sapply(list or vector, function)} applies the function to every element of list or vector, and returns a vector, when possible (easier to process)}
+    \item{\texttt{tapply(x, factor, fun)} uses the factor to split vector x into groups, and then applies fun to each group}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Related Apply Function Examples}
+<<relapply,results=hide>>=
+# create a list
+my.list <- list(a=1:3,b=5:10,c=11:20)
+my.list
+# Get the mean for each member of the list
+# return a vector
+sapply( my.list, mean)
+# Get the full summary for each member of
+# the list, returned as a list
+lapply( my.list, summary)
+# Find the mean for each group defined by a factor
+my.vector <- 1:10
+my.factor <- factor(
+  c(1,1,1,2,2,2,3,3,3,3))
+tapply(my.vector, my.factor, mean)
+@ 
+\end{frame}
+
+\section{Functions}
+
+\begin{frame}[fragile]
+  \frametitle{Function Overview}
+  \begin{itemize}
+    \item{Functions are objects and are assigned to names, just like data.}
+\begin{verbatim}
+myFunction = function(argument1,argument2) {
+  expression1
+  expression2
+}
+\end{verbatim}
+    \item{We write functions for anything we need to do again and again.}
+    \item{You may test your commands interactively at first, and then use the \texttt{history()} feature and an editor to create the function.}
+    \item{It is wise to include a comment at the start of each function to say what it does and to document functions of more than a few lines.}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example Functions}
+<<functions1>>=
+add1 = function(x) {
+    # this function adds one to the first argument and returns it
+    x + 1
+}
+add1(17)
+add1(c(17,18,19,20))
+@ 
+You can use the \texttt{edit()} function to make changes to a function.  The following command will open a window, allow you to make changes, and assign the result to a new function, \texttt{add2}.
+<<editfunction,eval=false>>=
+add2 = edit(add1)
+@
+\end{frame}
+
+\begin{frame}
+  \frametitle{Further Reading}
+  The amount of learning material for R is simply astonishing!
+  \begin{itemize}
+    \item{\href{http://manuals.bioinformatics.ucr.edu/home/R\_BioCondManual}{Thomas Girke's R and Bioconductor Manual}}
+    \item{\href{http://cran.r-project.org/other-docs.html}{A HUGE collection of contributed R documentation and tutorials}}
+    \item{\href{http://www.bioconductor.org/help/course-materials/}{Bioconductor course materials}}
+    \item{\href{http://watson.nci.nih.gov/~sdavis/}{Sean Davis' website}}
+    \item{\href{http://cran.r-project.org/manuals.html}{The Official R Manuals}}
+  \end{itemize}
+\end{frame}
+
+
+\end{document} 
