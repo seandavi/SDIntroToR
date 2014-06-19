@@ -1,0 +1,436 @@
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{01 Project Overview -- Slides}
+
+\documentclass[xcolor=dvipsnames]{beamer}
+\usepackage{BioconductorSlides}
+\hypersetup{colorlinks,linkcolor=,urlcolor=Blue}
+\AtBeginSection[]
+{
+  \begin{frame}<beamer>{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+\begin{document}
+
+\title{R / Bioconductor for Analysis and
+  Comprehension of High-Throughput Sequence Data}
+\author{Martin T. Morgan (\url{mtmorgan@fhcrc.org}) \\
+  Fred Hutchinson Cancer Research Center \\
+  Seattle, WA, USA \\
+  With Modifications by Sean Davis for CSHL 2014}
+\date{19 June 2014}
+
+\maketitle
+
+\section*{Introduction}
+
+\begin{frame}{Overview} 
+  \begin{enumerate}
+  \item Introduction to \R{} and \Bioconductor{}
+  \item Sequencing work flows
+  \item Successful computational biology software
+  \item Exemplars: algorithms into actions
+  \item Challenges \& opportunities
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Introduction: \Bioconductor}
+  Analysis and comprehension of high-throughput genomic data
+  \begin{itemize}
+  \item \url{http://bioconductor.org}
+  \item $>11$ years old, $749$ packages
+  \end{itemize}
+  Themes
+  \begin{itemize}
+  \item Rigorous statistics
+  \item Reproducible work flows
+  \item Integrative analysis
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Introduction: \Bioconductor}
+  \begin{columns}
+    \column{.5\textwidth}
+    \begin{itemize}
+    \item 1341 PubMed full-text citations in trailing 12 months
+    \item 28,000 web visits / month; 75,000 unique IP downloads / year
+    \item Annual conferences; courses; active mailing list; \ldots
+    \end{itemize}
+    \column{.5\textwidth}
+    \includegraphics[width=\textwidth]{figures/usage-geography}
+  \end{columns}
+  \bigskip\par
+  \textbf{\Bioconductor{} Conference}, July 30 - Aug 1, Boston, USA
+\end{frame}
+
+\begin{frame}{Introduction: What is \Bioconductor{} good for?}
+  \begin{itemize}
+  \item Microarrays: expression, copy number, SNPs, methylation, \ldots
+  \item Sequencing: RNA-seq, ChIP-seq, called variants, \ldots 
+    \begin{itemize}
+    \item Especially \emph{after} assembly / alignment
+    \end{itemize}
+  \item Annotation: genes, pathways, gene models (exons, transcripts,
+    etc.), \ldots
+  \item Flow cytometry, proteomics, image analysis, high-throughput
+    screens, \ldots
+  \end{itemize}
+\end{frame}
+
+\section*{Sequencing work flows}
+
+\begin{frame}[fragile]{Introduction: \R}
+  \begin{columns}
+    \column{.45\textwidth}
+    \begin{itemize}
+    \item \url{http://r-project.org}
+    \item Open-source, statistical programming language; widely used in
+      academia, finance, pharma, \ldots
+    \item Core language and base packages
+    \item Interactive sessions, scripts
+    \item $>5000$ contributed packages
+    \end{itemize}
+    \column{.55\textwidth}
+<<eval=FALSE, tidy=FALSE>>=
+## Two 'vectors'
+x <- rnorm(1000)
+y <- x + rnorm(1000, sd=.5)
+## Integrated container
+df <- data.frame(X=x, Y=y)
+## Visualize
+plot(Y ~ X, df)
+## Regression; 'object'
+fit <- lm(Y ~ X, df)
+## Methods on the object
+abline(fit) # regression line
+anova(fit)  # ANOVA table
+@ 
+  \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]{Sequencing: Work flows}
+  \begin{columns}
+    \column{.5\textwidth}
+    \begin{enumerate}
+    \item Experimental design
+    \item `Wet lab' sample prep
+    \item Sequencing
+        \begin{itemize}
+        \item 100's of millions of reads
+        \item 30-150 nucleotides
+        \item Single and paired-end
+        \item Bar codes, lanes \& flow cells
+        \end{itemize}
+    \item Alignment
+    \item Analysis: DNA, RNA, epigenetics, integrative, microbiome,
+      \ldots
+    \end{enumerate}
+    \column{.5\textwidth}
+    \includegraphics[width=\textwidth,height=!]{figures/Solexa-bridge-pcr.jpg}
+    \par Bentley et al., 2008, Nature 456:
+    \href{http://www.ncbi.nlm.nih.gov/pubmed/18987734}{53-9}
+  \end{columns}
+\end{frame}
+
+{\scriptsize\begin{verbatim}
+@ERR127302.1703 HWI-EAS350_0441:1:1:1460:19184#0/1
+CCTGAGTGAAGCTGATCTTGATCTACGAAGAGAGATAGATCTTGATCGTCGAGGAGATGCTGACCTTGACCT
++
+HHGHHGHHHHHHHHDGG<GDGGE@GDGGD<?B8??ADAD<BE@EE8EGDGA3CB85*,77@>>CE?=896=:
+@ERR127302.1704 HWI-EAS350_0441:1:1:1460:16861#0/1
+GCGGTATGCTGGAAGGTGCTCGAATGGAGAGCGCCAGCGCCCCGGCGCTGAGCCGCAGCCTCAGGTCCGCCC
++
+DE?DD>ED4>EEE>DE8EEEDE8B?EB<@3;BA79?,881B?@73;1?########################
+@ERR127302.1705 HWI-EAS350_0441:1:1:1460:13054#0/1
+AAAACACCCTGCAATCTTTCAGACAGGATGTTGACAATGCGTCTCTGGCACGTCTTGACCTTGAACGCAAAG
++
+EEDEE>AD>BBGGB8E8EEEGBGGGGBGGGGG3G>E3*?BE??BBC8GB8??:??GGDGDDD>D>B<GDDC8
+@ERR127302.1706 HWI-EAS350_0441:1:1:1460:14924#0/1
+CACCCAGTGGGGTGGAGTCGGAGCCACTGGTCCTGCTGCTGGCTGCCTCTCTGCTCCACCTTGTGACCCAGG
++
+HHHHHGEEGEEADDGDBG>GGD8EG,<6<?AGGADFEHHC@>D@<@G@>AB@B?8AA>CE@D8@B=?CC>AG
+@ERR127302.1707 HWI-EAS350_0441:1:1:1461:6983#0/1
+CGACGCTGACACCGGAACGGCAGCAGCAGCAGGACGATTAAGACAAGGAGGATGGCTCCACAGACGCTCATG
++
+GEEGEGE@GGGGGGEGGGGGBB>G3?33?8*;;79?<9@?DD8@DDEE888;-BB?.A##############
+@ERR127302.1708 HWI-EAS350_0441:1:1:1461:10827#0/1
+AAAGAAGGTCCTTGCAATAGACTGCCTCTGCTTGAGAACTTATGATGTAATTATTGCATGCTGCTAATATAC
++
+GGGGGDDEBFGGGGGBE,DAGDDGGGEEEG<EEFDECFFEEEDE@<>ACEBEFDEEFE<EDC@E<EECCBEB
+@ERR127302.1709 HWI-EAS350_0441:1:1:1461:7837#0/1
+CAGCCACAGAACCACGGCACGGAAGACATGAGGCAGCATGCTCACGAGAGAGGTGAGGGTCTCCCCTCCAGG
++
+HHGHHHH>DH:@.7@49;88G8>G>DDG@D>D@G@GE>@DDBDDG<A82?######################
+\end{verbatim}}
+
+\begin{frame}[fragile]{Sequencing: The \Biocpkg{ShortRead} package}
+<<ShortRead, eval=FALSE, tidy=FALSE>>=
+## Use the 'ShortRead' package
+library(ShortRead)
+## Create an object to represent a sample from a file
+sampler <- FastqSampler("ERR127302_1.fastq.gz")
+## Apply a method to yield a random sample
+fq <- yield(sampler)
+## Access sequences of sampled reads using `sread()`
+## Summarize nucleotide use by cycle
+## 'abc' is a nucleotide x cycle matrix of counts
+abc <- alphabetByCycle(sread(fq))
+## Subset of interesting nucleotides
+abc <- abc[c("A", "C", "G", "T", "N"),]
+@     
+\end{frame}
+
+\begin{frame}[fragile]{Sequencing: The \Biocpkg{ShortRead} package}
+  \begin{columns}
+    \column{.5\textwidth}
+<<ShortRead-vis, eval=FALSE, tidy=FALSE>>=
+## Create a plot from a
+## matrix
+matplot(t(abc), type="l",
+  lty=1, lwd=3, 
+  xlab="Cycle",
+  ylab="Count",
+  cex.lab=2)
+## Add a legend
+legend("topright", 
+  legend=rownames(abc),
+  lty=1, lwd=3, col=1:5,
+  cex=1.8)
+@     
+    \column{.5\textwidth}
+    \includegraphics[width=\textwidth]{figures/abc}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Sequencing: Essential packages and classes}
+  \begin{itemize}
+  \item \Biocpkg{Biostrings} and \Rclass{DNAStringSet}
+  \item \Biocpkg{GenomicRanges} and \Rclass{GRanges}
+  \item \Biocpkg{GenomicFeatures} and \Rclass{TranscriptDb}
+  \item \Biocpkg{VariantAnnotation} and \Rclass{VCF}
+  \item Input and output: \Biocpkg{rtracklayer} (WIG, BED, etc.),
+    \Biocpkg{Rsamtools} (BAM), \Biocpkg{ShortRead} (FASTQ) file input
+  \end{itemize}
+\end{frame}
+
+\section*{Principles}
+
+\begin{frame}{Principles: Some key points}
+  \begin{itemize}
+  \item \R{} is a high-level programming language, so lots can be
+    accomplished with just a little code
+  \item Packages such as \Biocpkg{ShortRead} provide a great way to
+    benefit from the expertise of others (and to contribute your own
+    expertise back to the community!)
+    \begin{itemize}
+    \item The path from `user' to `developer' is not that long, and
+      has been taken by many!
+    \end{itemize}
+  \item Objects and methods such as \Rclass{data.frame},
+    \Rclass{ShortReadQ} and \Rcode{alphabetByCycle()}) help to manage
+    complicated data
+    \begin{itemize}
+    \item Reducing possibility for clerical and other mistakes
+    \item Facilitating inter-operability between different parts of an
+      analysis
+    \end{itemize}
+  \item Scripts make work flows reproducible
+  \item Visualizing data is an important part of exploratory analysis
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Principles: Successful computational biology software}
+  \begin{enumerate}
+  \item Extensive: software, annotation, integration
+      \begin{itemize}
+      \item 750 inter-operable \Bioconductor{} packages
+      \end{itemize}
+  \item Statistical: volume, technology, experimental design
+      \begin{itemize}
+      \item \R{} a `natural' for statistical analysis
+      \end{itemize}
+  \item Reproducible: long-term, multi-participant science
+      \begin{itemize}
+      \item Objects, scripts, vignettes, packages, \ldots encourage
+        reproducible research
+      \end{itemize}
+  \item Leading edge: novel, technology-driven
+      \begin{itemize}
+      \item Packages and user community closely track leading edge
+        science
+      \end{itemize}
+  \item Accessible: affordable, transparent, usable
+      \begin{itemize}
+      \item \Bioconductor{} is free and open, with extensive
+        documentation and an active and supportive user community
+      \end{itemize}
+  \end{enumerate}
+  Case study: differential expression of known genes; see also
+  \href{http://bioconductor.org/help/course-materials/2013/EMBOBGI/reproducible-research.pdf}{reproducible
+    research} lecture.
+\end{frame}
+
+\section*{Exemplars}
+
+\begin{frame}{Exemplars: Algorithms to action}
+  \begin{enumerate}
+  \item Batch effects
+  \item Methylation
+  \item RNA-seq Differential Representation
+  \item Visualization
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Exemplar: Differential Representation}
+  Haglund et al., 2012
+  \href{http://www.ncbi.nlm.nih.gov/pubmed/23024189}{J Clin Endocrin
+    Metab}
+  \bigskip\par
+  \begin{columns}
+    \column{.5\textwidth}
+    \begin{itemize}
+    \item Scientific finding: identify genes whose expression is
+      regulated by estrogen receptors in parathyroid adenoma cells
+    \item Statistical challenges: between-sample normalization;
+      appropriate statistical model; efficient estimation; \ldots
+    \end{itemize}
+    \column{.5\textwidth}
+    \includegraphics[width=\textwidth]{figures/DESeq2_parathyroid-plotMApadjchange.png}
+  \end{columns}
+  \bigskip\par\Bioconductor{} support: \Biocpkg{DESeq2}, \Biocpkg{edgeR}, many
+  statistical `lessons learned' from microarrays; extensive
+  integration with down-stream tools
+\end{frame}
+
+\begin{frame}{Exemplar: Batch Effects}
+  Leek et al., 2010, Nature Reviews Genetics 11,
+  \href{http://www.nature.com/nrg/journal/v11/n10/abs/nrg2825.html}{733-739},
+  Leek \& Story
+  \href{http://dx.doi.org/10.1371/journal.pgen.0030161}{PLoS Genet
+    3(9): e161}
+  \begin{columns}
+    \column{.5\textwidth} 
+    \begin{itemize}
+    \item Scientific finding: pervasive batch effects
+    \item Statistical insights: surrogate variable analysis: identify
+      and build surrogate variables; remove known batch effects
+    \item Benefits: reduce dependence, stabilize error rate estimates,
+      and improve reproducibility
+    \end{itemize}
+    \Bioconductor{} support: \Biocpkg{sva}
+    \column{.5\textwidth}
+    \only<1>{
+      \includegraphics[width=\textwidth]{figures/nrg2825-f2.jpg}
+      \par{\small HapMap samples from one facility, ordered by
+        date of processing.  From }
+    }
+    \only<2>{
+      \begin{enumerate}
+      \item Remove signal due to variable(s) of interest
+      \item Identify subset of genes driving orthogonal signatures
+        of EH
+      \item Build a surrogate variable based on full EH signature of
+        that subset
+      \item Include significant surrogate variables as covariates
+      \end{enumerate}
+      EH: expression heterogeneity
+    }
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Exemplar: Methylation}
+  Hansen et al., 2011, Nature Genetics 43, 
+  \href{http://www.nature.com/ng/journal/v43/n8/full/ng.865.html}{768-775}
+  \begin{itemize}
+  \item Scientific finding: stochastic methylation variation of
+    cancer-specific de-methylated regions (DMR), distinguishing cancer from
+    normal tissue, in several cancers.
+  \item Statistical challenges: smoothing, non-specific filtering, $t$
+    statistics, find DMRs
+  \end{itemize}
+  \bigskip\par
+  \includegraphics[width=\textwidth]{figures/bsseq_analysis-1.png}
+  \medskip\par \Bioconductor{} support: whole-genome (\Biocpkg{bsseq})
+  or reduced representation (\Biocpkg{MethylSeekR}) bisulfite
+  sequencing; Illumina 450k arrays (\Biocpkg{minfi})
+\end{frame}
+
+\begin{frame}{Exemplar: Visualization}
+  \begin{columns}
+    \column{.5\textwidth}
+    \Biocpkg{Gviz}\par
+    \only<1-2>{
+    \begin{itemize}
+    \item Track-like visualizations
+    \item Data panels
+    \item Fully integrated with \Bioconductor{} sequence
+      representations
+    \end{itemize}
+    }
+    \Biocpkg{ggbio}\par
+    \only<3>{
+    \begin{itemize}
+    \item Comprehensive visualizations
+    \item \Rfunction{autoplot} file and data types
+    \item Fully integrated with \Bioconductor{} sequence
+      representations
+    \end{itemize}
+    }
+    \Biocpkg{epivizr}\par
+    \only<4>{
+      \begin{itemize}
+      \item Genome browser with socket communication to \R{}
+      \item Fully integrated with \Bioconductor{} sequence
+        representations
+      \end{itemize}
+    }
+    \column{.5\textwidth}
+    \only<1>{\includegraphics[width=\textwidth]{figures/Gviz-vignette-1.png}}
+    \only<2>{\includegraphics[width=\textwidth]{figures/Gviz-vignette-2.png}}
+    \only<3>{\includegraphics[width=\textwidth]{figures/ggbio-vignette-1.png}}
+    \only<4>{\includegraphics[width=\textwidth]{figures/epivisr.png}}
+  \end{columns}
+\end{frame}
+
+\section*{Challenges \& Opportunities}
+
+\begin{frame}{Challenges \& Opportunities}
+  \begin{itemize}
+  \item Big data -- transparent management within \R, facile use of
+    established resources
+  \item Developer and user training
+  \end{itemize}
+  Resources
+  \begin{itemize}
+  \item \url{http://r-project.org}, \emph{An Introduction to \R}
+    manual; Dalgaard, \emph{Introductory Statistics with \R};
+    \href{http://rfordummies.com/}{\R{} for Dummies}
+  \item \url{http://bioconductor.org/}
+  \item \url{http://rstudio.org}
+  \item 
+    \href{http://stackoverflow.com/questions/tagged/r}{StackOverflow},
+    \Bioconductor{}
+    \href{http://bioconductor.org/help/mailing-list/mailform/}{mailing
+      list}
+  \end{itemize}
+\end{frame}
+
+\section*{Acknowledgements}
+
+\begin{frame}{Acknowledgements}
+  \begin{itemize}
+  \item \Bioconductor{} team: Marc Carlson, Valerie Obenchain, Herv\'e
+    Pag\`es, Paul Shannon, Dan Tenenbaum
+  \item Technical advisory council: Vincent Carey, Wolfgang Huber,
+    Robert Gentleman, Rafael Irizzary, Sean Davis, Kasper Hansen
+  \item Scientific advisory board: Simon Tavar\'e, Vivian Bonazzi,
+    Vincent Carey, Wolfgang Huber, Robert Gentleman, Rafael Irizzary,
+    Paul Flicek, Simon Urbanek.
+  \item NIH / NHGRI U41HG0004059
+  \item The \Bioconductor{} community
+  \item \ldots and the organizers of this course!
+  \end{itemize}
+\end{frame}
+
+\end{document}
