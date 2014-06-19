@@ -16,8 +16,6 @@
 \title{R / Bioconductor for Analysis and
   Comprehension of High-Throughput Sequence Data}
 \author{Martin T. Morgan (\url{mtmorgan@fhcrc.org}) \\
-  Fred Hutchinson Cancer Research Center \\
-  Seattle, WA, USA \\
   With Modifications by Sean Davis for CSHL 2014}
 \date{19 June 2014}
 
@@ -30,7 +28,6 @@
   \item Introduction to \R{} and \Bioconductor{}
   \item Sequencing work flows
   \item Successful computational biology software
-  \item Exemplars: algorithms into actions
   \item Challenges \& opportunities
   \end{enumerate}
 \end{frame}
@@ -269,91 +266,6 @@ legend("topright",
   Case study: differential expression of known genes; see also
   \href{http://bioconductor.org/help/course-materials/2013/EMBOBGI/reproducible-research.pdf}{reproducible
     research} lecture.
-\end{frame}
-
-\section*{Exemplars}
-
-\begin{frame}{Exemplars: Algorithms to action}
-  \begin{enumerate}
-  \item Batch effects
-  \item Methylation
-  \item RNA-seq Differential Representation
-  \item Visualization
-  \end{enumerate}
-\end{frame}
-
-\begin{frame}{Exemplar: Differential Representation}
-  Haglund et al., 2012
-  \href{http://www.ncbi.nlm.nih.gov/pubmed/23024189}{J Clin Endocrin
-    Metab}
-  \bigskip\par
-  \begin{columns}
-    \column{.5\textwidth}
-    \begin{itemize}
-    \item Scientific finding: identify genes whose expression is
-      regulated by estrogen receptors in parathyroid adenoma cells
-    \item Statistical challenges: between-sample normalization;
-      appropriate statistical model; efficient estimation; \ldots
-    \end{itemize}
-    \column{.5\textwidth}
-    \includegraphics[width=\textwidth]{figures/DESeq2_parathyroid-plotMApadjchange.png}
-  \end{columns}
-  \bigskip\par\Bioconductor{} support: \Biocpkg{DESeq2}, \Biocpkg{edgeR}, many
-  statistical `lessons learned' from microarrays; extensive
-  integration with down-stream tools
-\end{frame}
-
-\begin{frame}{Exemplar: Batch Effects}
-  Leek et al., 2010, Nature Reviews Genetics 11,
-  \href{http://www.nature.com/nrg/journal/v11/n10/abs/nrg2825.html}{733-739},
-  Leek \& Story
-  \href{http://dx.doi.org/10.1371/journal.pgen.0030161}{PLoS Genet
-    3(9): e161}
-  \begin{columns}
-    \column{.5\textwidth} 
-    \begin{itemize}
-    \item Scientific finding: pervasive batch effects
-    \item Statistical insights: surrogate variable analysis: identify
-      and build surrogate variables; remove known batch effects
-    \item Benefits: reduce dependence, stabilize error rate estimates,
-      and improve reproducibility
-    \end{itemize}
-    \Bioconductor{} support: \Biocpkg{sva}
-    \column{.5\textwidth}
-    \only<1>{
-      \includegraphics[width=\textwidth]{figures/nrg2825-f2.jpg}
-      \par{\small HapMap samples from one facility, ordered by
-        date of processing.  From }
-    }
-    \only<2>{
-      \begin{enumerate}
-      \item Remove signal due to variable(s) of interest
-      \item Identify subset of genes driving orthogonal signatures
-        of EH
-      \item Build a surrogate variable based on full EH signature of
-        that subset
-      \item Include significant surrogate variables as covariates
-      \end{enumerate}
-      EH: expression heterogeneity
-    }
-  \end{columns}
-\end{frame}
-
-\begin{frame}{Exemplar: Methylation}
-  Hansen et al., 2011, Nature Genetics 43, 
-  \href{http://www.nature.com/ng/journal/v43/n8/full/ng.865.html}{768-775}
-  \begin{itemize}
-  \item Scientific finding: stochastic methylation variation of
-    cancer-specific de-methylated regions (DMR), distinguishing cancer from
-    normal tissue, in several cancers.
-  \item Statistical challenges: smoothing, non-specific filtering, $t$
-    statistics, find DMRs
-  \end{itemize}
-  \bigskip\par
-  \includegraphics[width=\textwidth]{figures/bsseq_analysis-1.png}
-  \medskip\par \Bioconductor{} support: whole-genome (\Biocpkg{bsseq})
-  or reduced representation (\Biocpkg{MethylSeekR}) bisulfite
-  sequencing; Illumina 450k arrays (\Biocpkg{minfi})
 \end{frame}
 
 \begin{frame}{Exemplar: Visualization}

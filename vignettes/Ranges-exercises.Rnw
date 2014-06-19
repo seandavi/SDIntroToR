@@ -1,0 +1,453 @@
+%\VignetteIndexEntry{05 Range-based Containers -- Exercises}
+%\VignetteEngine{knitr::knitr}
+
+\documentclass{article}
+
+<<style, eval=TRUE, echo=FALSE, results='asis'>>=
+options(max.print=1000)
+#stopifnot(BiocInstaller::biocVersion() == "2.13")
+BiocStyle::latex()
+library(knitr)
+opts_chunk$set(cache=TRUE, tidy=FALSE)
+
+plotRanges <- function(x, xlim = x, main = deparse(substitute(x)),
+                       col = "black", sep = 0.5, ...)
+{
+  height <- 1
+  if (is(xlim, "Ranges"))
+    xlim <- c(min(start(xlim)), max(end(xlim)))
+  bins <- disjointBins(IRanges(start(x), end(x) + 1))
+  plot.new()
+  par(mai=c(0.5, 0.2, 1.2, 0.2))
+  plot.window(xlim, c(0, max(bins)*(height + sep)))
+  ybottom <- bins * (sep + height) - height
+  rect(start(x)-0.5, ybottom, end(x)+0.5, ybottom + height, col = col, ...)
+  title(main, cex.main=2.8, font.main=1)
+  axis(1)
+}
+@ 
+
+
+\title{Practical: Range-based containers}
+\author{Herv\'e Pag\`es (\url{hpages@fhcrc.org})\\
+With modifications by Sean Davis for CSHL 2014}
+\date{19 June 2014}
+
+\newcommand{\Hsap}{\emph{H.~sapiens}}
+\newcommand{\Dmel}{\emph{D.~melanogaster}}
+
+\usepackage{theorem}
+\newtheorem{Ext}{Exercise}
+\newenvironment{Exercise}{
+  \renewcommand{\labelenumi}{\alph{enumi}.}\begin{Ext}%
+}{\end{Ext}}
+\newenvironment{Solution}{%
+  \noindent\textbf{Solution:}\renewcommand{\labelenumi}{\alph{enumi}.}%
+}{\bigskip}
+
+\setlength{\abovecaptionskip}{6pt}
+\setlength{\belowcaptionskip}{6pt}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+
+\section{An introduction to genomic ranges}
+
+A \emph{genomic range} is a region on a genome that is made of contiguous
+nucleotides (i.e. no gaps). It is defined by a chromosome name (a.k.a.
+sequence name), a start and an end coordinate, and possibly a strand.
+Genomic ranges are used to locate various things on a reference genome such
+as genomic features (genes, transcripts, exons, repeat regions, etc...),
+aligned reads, or regions of interest (e.g. peaks detected in a ChIP-seq
+analysis).
+
+In \Bioconductor{}, the \Rclass{GRanges} class, defined and documented in
+the \Rpackage{GenomicRanges} package, is used to represent a vector of
+genomic ranges.
+
+\subsection{Mandatory components of a \Rclass{GRanges} object}
+
+A \Rclass{GRanges} object contains the following mandatory components:
+\begin{itemize}
+  \item A vector of sequence names, accessed with the \Rcode{seqnames()}
+        accessor.
+  \item A vector of start coordinates, accessed with the \Rcode{start()}
+        accessor.
+  \item A vector of end coordinates, accessed with the \Rcode{end()}
+        accessor.
+  \item A vector of strand values (\Rcode{+}, \Rcode{-}, or \Rcode{*}),
+        accessed with the \Rcode{strand()} accessor.
+\end{itemize}
+The vectors returned by the \Rcode{seqnames()}, \Rcode{start()},
+\Rcode{end()}, and \Rcode{strand()} accessors have the same length,
+which is the number of genomic ranges in the object. By definition, this
+is also considered to be the length of the object and it can be obtained
+with \Rcode{length()} (like with an ordinary vector).
+
+Here is an example of a \Rclass{GRanges} object of length 7 (i.e. with 7
+genomic ranges in it):
+<<echo=FALSE>>=
+suppressPackageStartupMessages(library(GenomicRanges))
+gr1 <- GRanges(Rle(c("chr1", "chr19", "chrX", "chrM", "chr19"),
+                   c(2, 1, 2, 1, 1)),
+               IRanges(c(10001, 5508, 25644, 685, 142501, 33077, 8001),
+                       width=c(400, 285, 1620, 333, 1, 2000, 421)),
+               strand=c("-", "*", "+", "+", "-", "*", "+"))
+@
+<<>>=
+gr1
+@
+
+Here is another more realistic \Rclass{GRanges} object representing a
+tiling of the full Yeast genome (with tiles of size 50000 nucleotides):
+<<echo=FALSE>>=
+suppressPackageStartupMessages(library(BSgenome.Scerevisiae.UCSC.sacCer2))
+tiles <- tileGenome(seqinfo(Scerevisiae), tilewidth=50000,
+                    cut.last.tile.in.chrom=TRUE)
+@
+<<>>=
+tiles
+@
+
+An important convention to keep in mind about the start and end coordinates
+of a genomic range is that they are both \emph{1-based} positions relative
+to the 5' end of the plus strand of the reference sequence, \emph{even when
+the range is on the minus strand}. Also the nucleotides located at the start
+and end positions are both considered to be part of the range (the former
+being the left-most nucleotide of the range and the latter its
+right-most nucleotide).
+
+\subsection{Metadata columns of a \Rclass{GRanges} object}
+
+In addition to the mandatory components described above, one or more
+\emph{metadata columns} can be stored in a \Rclass{GRanges} object in the
+form of a \Rclass{DataFrame} that can be accessed with the \Rcode{mcol()}
+accessor. The \Rclass{DataFrame} has one row per genomic range and its
+columns are considered to be the metadata columns of the \Rclass{GRanges}
+object.
+
+Here is an example of a \Rclass{GRanges} object with 2 metadata columns:
+<<echo=FALSE>>=
+gr2 <- gr1
+mcols(gr2) <- DataFrame(desc=c("exon",
+                               "repeat region",
+                               "gene",
+                               "exon",
+                               "exon",
+                               "snp",
+                               "repeat region"),
+                        GC_content=c(0.55, 0.495, 0.562, 0.53, 0.552, NA, 0.51))
+@
+<<>>=
+gr2
+@
+
+Another example of a \Rclass{GRanges} object with metadata columns is shown
+below. This object represents all the known protein coding regions (CDS) on
+the Human genome (positions are reported with respect to reference assembly
+hg19):
+<<echo=FALSE>>=
+suppressPackageStartupMessages(library(TxDb.Hsapiens.UCSC.hg19.knownGene))
+hg19_cds <- cds(TxDb.Hsapiens.UCSC.hg19.knownGene,
+                columns="gene_id")
+@
+<<>>=
+hg19_cds
+@
+
+
+\section{Working with \Rclass{GRanges} objects}
+
+\subsection{Basic manipulation}
+
+\begin{Exercise}
+  This exercise illustrates basic manipulation of \Rclass{GRanges} objects.
+  \begin{enumerate}
+    \item Load the package where the \Rclass{GRanges} class is defined
+          and documented.
+
+    \item Open the man page for the \Rclass{GRanges} class and run the
+          examples in it.
+
+    \item Display the \Rcode{gr} object.
+
+    \item Use the \Rcode{seqnames()} accessor to get the vector of sequence
+          names. What is the class of this vector? Use \Rcode{table()} on
+          it to count the number of genomic ranges on each reference
+          sequence.
+
+    \item In addition to the start and end coordinates that can be obtained
+          with the \Rcode{start()} and \Rcode{end()} accessors, the
+          \emph{width} of the ranges can be obtained with the \Rcode{width()}
+          accessor. By definition, the \emph{width} of a genomic range is
+          the number of nucleotides in it. For any range, we have
+          $width = end - start + 1$.
+
+          Obtain the width of the ranges in \Rcode{gr}.
+
+          How do you check that $width$ is indeed the same as
+          $end - start + 1$ programmatically?
+  \end{enumerate}
+\end{Exercise}
+
+\begin{Solution}
+  \begin{enumerate}
+    \item The \Rclass{GRanges} class is defined and documented in the
+          \Rpackage{GenomicRanges} package.
+<<echo=FALSE>>=
+while (search()[2L] != "package:parallel")
+    detach(search()[2L], character.only=TRUE)
+detach("package:parallel")
+@
+<<results='asis'>>=
+library(GenomicRanges)
+@
+
+    \item Use the \Rcode{class?<classname>} or
+          \Rcode{?\`{}<classname>-class\`{}} syntax to open the man page
+          for a given class:
+<<eval=FALSE>>=
+class?GRanges
+@
+          Since there is also a constructor function for \Rclass{GRanges}
+          objects (the \Rcode{GRanges()} function) documented in the same
+          man page, the man page can also be accessed with \Rcode{?GRanges}.
+
+          To run the examples in a man page, you can copy/paste them into
+          your current session or call the \Rcode{example()} function
+          on the same alias you used to open the man page (i.e. on the part
+          following the \Rcode{?}):
+<<results='hide'>>=
+example(GRanges)
+@
+
+    \item The code in the examples calls the \Rcode{GRanges()} constructor
+          function to create the \Rcode{gr} object:
+<<>>=
+gr
+@
+
+    \item The vector of sequence names can be obtained with the
+          \Rcode{seqnames()} accessor:
+<<>>=
+seqnames(gr)
+@
+          This is an \Rclass{Rle} (Run Length Encoding) object:
+<<>>=
+class(seqnames(gr))
+@
+          Using an \Rclass{Rle} representation of a vector or factor is a
+          simple and efficient way to reduce its size in memory (a.k.a.
+          its \emph{memory footprint})  when it has long \emph{runs} of
+          with the same value.
+
+    \item The \emph{width} of the ranges in \Rcode{gr}:
+<<>>=
+width(gr)
+@
+          We can check that $width = end - start + 1$ with:
+<<>>=
+all(width(gr) == end(gr) - start(gr) + 1)
+@
+  \end{enumerate}
+\end{Solution}
+
+\begin{Exercise}
+  This exercise illustrates more basic manipulation of \Rclass{GRanges}
+  objects.
+  \begin{enumerate}
+    \item Like ordinary vectors in \R{}, \Rclass{GRanges} objects can have
+          names on them (one per vector element in the object). The mechanism
+          for getting or setting the names is with the \Rcode{names} getter
+          and setter.
+
+          Obtain the names of \Rcode{gr}.
+
+          Replace the current names with upper case names (same names but
+          upper case).
+
+    \item Like ordinary vectors in \R{}, \Rclass{GRanges} objects can be
+          subsetted with the \Rcode{[} operator.
+
+          Subset \Rcode{gr} to keep only the ranges located on the \Rcode{+}
+          strand.
+
+    \item Obtain the metadata columns in \Rcode{gr}.
+
+          Obtain the \Rcode{GC} column.
+
+          Subset \Rcode{gr} to keep only the ranges for which the \Rcode{GC}
+          value is >= 0.3 and <= 0.6.
+
+    \item Finally, add a new metadata column to \Rcode{gr}.
+  \end{enumerate}
+\end{Exercise}
+
+\begin{Solution}
+  \begin{enumerate}
+    \item We get the names with:
+<<>>=
+names(gr)
+@
+
+    \item We use the \Rcode{toupper()} function to translate the names from
+          lower to upper case, and then we set the new names back on
+          \Rcode{gr} with the \Rcode{names()} \emph{setter} (i.e. we call
+          \Rcode{names()} on the \emph{left side} of the assignment):
+<<>>=
+names(gr) <- toupper(names(gr))
+@
+
+    \item To obtain all the metadata columns:
+<<>>=
+mcols(gr)
+@
+          To obtain the \Rcode{GC} column:
+<<>>=
+mcols(gr)$GC
+@
+          To keep only the ranges for which GC is >= 0.3 and <= 0.6:
+<<>>=
+gr[mcols(gr)$GC >= 0.3 & mcols(gr)$GC <= 0.6]
+@
+          Note that this subsetting can be performed more conveniently with
+          \Rcode{subset()}:
+<<>>=
+subset(gr, GC >= 0.3 & GC <= 0.6)
+@
+
+    \item To set a metadata column on \Rcode{gr}, we use the same form as for
+          getting a metadata column but this time on the \emph{left side} of
+          the assignment:
+<<>>=
+mcols(gr)$id <- sprintf("ID%03d", seq_along(gr))
+gr
+@
+  \end{enumerate}
+\end{Solution}
+
+\subsection{Common range transformations}
+
+The ranges in a \Rclass{GRanges} object can be transformed in different ways.
+Some of the most common range transformations are shown on
+figure~\ref{fig:range-transformations} below.
+
+<<ranges-gr0-plot,results='hide',echo=FALSE,fig.keep='none'>>=
+gr0 <- IRanges(start=c(7, 9, 12, 14, 22:24),
+               end=c(15, 11, 12, 18, 26, 27, 28))
+
+png("ranges-gr0-plot.png", width=800, height=170)
+plotRanges(gr0, xlim=c(5, 35), main="gr0", col="blue")
+dev.off()
+@
+<<ranges-shift-gr0-plot,results='hide',echo=FALSE,fig.keep='none'>>=
+png("ranges-shift-gr0-plot.png", width=800, height=170)
+plotRanges(shift(gr0, 5), xlim=c(5, 35), main="shift(gr0, 5)", col="blue")
+dev.off()
+@
+<<ranges-disjoin-gr0-plot,results='hide',echo=FALSE,fig.keep='none'>>=
+png("ranges-disjoin-gr0-plot.png", width=800, height=170)
+plotRanges(disjoin(gr0), xlim=c(5, 35), main="disjoin(gr0)", col="blue")
+dev.off()
+@
+<<ranges-reduce-gr0-plot,results='hide',echo=FALSE,fig.keep='none'>>=
+png("ranges-reduce-gr0-plot.png", width=800, height=170)
+plotRanges(reduce(gr0), xlim=c(5, 35), main="reduce(gr0)", col="blue")
+dev.off()
+@
+\begin{figure}
+  \centering
+  \includegraphics[width=0.8\textwidth,height=!]{ranges-gr0-plot}\\
+  \includegraphics[width=0.8\textwidth,height=!]{ranges-shift-gr0-plot}\\
+  \includegraphics[width=0.8\textwidth,height=!]{ranges-disjoin-gr0-plot}\\
+  \includegraphics[width=0.8\textwidth,height=!]{ranges-reduce-gr0-plot}
+  \caption{Range transformations \Rcode{shift()}, \Rcode{disjoin()}, and
+           \Rcode{reduce()}. For clarity, \Rcode{gr0} is a \Rclass{GRanges}
+           object with all its ranges on the same reference sequence and
+           strand.}
+  \label{fig:range-transformations}
+\end{figure}
+
+\begin{Exercise}
+  In this exercise we perform some range transformations on a \Rclass{GRanges}
+  object.
+  \begin{enumerate}
+    \item Use \Rcode{shift} to shift the ranges in \Rcode{gr} by 500 positions
+          to the right. Store the result in \Rcode{gr2}.
+
+    \item Find the man page for the \Rcode{flank} method that operates on
+          \Rclass{GRanges} objects. Obtain the upstream flanking regions of
+          width 100 for \Rcode{gr2}, that is, the regions corresponding to
+          the 100 nucleotides located upstream of each range in \Rcode{gr2}
+          when moving in the 5' to 3' direction.
+
+    \item ``Display'' the \Rcode{shift()} function. What kind of function
+          is that? Which arguments are involved in the dispatch mechanism?
+
+    \item Use \Rcode{showMethods} to list all the \Rcode{shift} methods.
+          Which method is used when we call \Rcode{shift()} on a
+          \Rclass{GRanges} object? Try to open the man page for \emph{this}
+          method using the \Rcode{?<something-here>} syntax.
+  \end{enumerate}
+\end{Exercise}
+
+\begin{Solution}
+  \begin{enumerate}
+    \item
+<<>>=
+gr2 <- shift(gr, 500)
+@
+
+    \item
+<<>>=
+flank(gr2, width=100)
+@
+
+    \item To ``display'' the \Rcode{shift()} function, we just type the
+          name of the function followed by <Enter>, like with any other
+          object in \R{}. For an ordinary function, this displays the
+          \emph{body} of the function (i.e. its implementation).
+          However, for \Rcode{shift()}, we get something different:
+<<>>=
+shift
+@
+          This is because \Rcode{shift()} is not an ordinary function but
+          an \emph{S4 generic function}. A generic function doesn't do the
+          work: instead it calls the appropriate method for doing it.
+          The selection of the appropriate method is done internally by
+          the \emph{dispatch mechanism}. The dispatch mechanism looks at
+          the types of the arguments that are passed to the generic function
+          and selects the most specific method compatible with these
+          arguments. In the case of \Rcode{shift()}, only 1 argument is
+          considered for dispatch (the first argument \Rcode{x}).
+
+    \item To list all the \Rcode{shift} methods:
+<<>>=
+showMethods(shift)
+@
+          To see the method that is used when \Rcode{x} is a \Rclass{GRanges}
+          object:
+<<>>=
+selectMethod(shift, "GRanges")
+@
+          Pay attention to the last 2 lines. One complication here is that
+          the method that is used when \Rcode{x} is a \Rclass{GRanges}
+          object is not defined specifically for the \Rclass{GRanges} class
+          but for the \Rclass{GenomicRanges} class which is a parent class
+          of the \Rclass{GRanges} class. We can check that \Rcode{gr} is
+          indeed a \Rclass{GenomicRanges} object, even though it's not a
+          \Rclass{GenomicRanges} \emph{instance}:
+<<>>=
+is(gr, "GenomicRanges")
+class(gr)
+@
+          To open the man page for \emph{this} method:
+<<eval=FALSE>>=
+?`shift,GenomicRanges-method`
+@
+  \end{enumerate}
+\end{Solution}
+\end{document}
