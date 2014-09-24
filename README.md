@@ -9,7 +9,7 @@ Installation
 1. Start R (or RStudio)
 2. Paste the following code into your R session
 
-```
+```{r}
 install.packages('devtools')
 devtools::install_github('seandavi/SDIntroToR')
 ```
@@ -18,7 +18,7 @@ Where are the slides?
 =====================
 After installing the package, the slides are available by typing:
 
-```
+```{r}
 vignette('RIntroSlides','SDIntroToR')
 ```
 
