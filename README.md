@@ -10,6 +10,15 @@ Installation
 2. Paste the following code into your R session
 
 ```
-source('http://bioconductor.org/biocLite.R')
-biocLite('SDIntroToR',siteRepos='http://watson.nci.nih.gov/~sdavis/software/R',type='source')
+install.packages('devtools')
+devtools::install_github('seandavi/SDIntroToR')
 ```
+
+Where are the slides?
+=====================
+After installing the package, the slides are available by typing:
+
+```
+vignette('RIntroSlides','SDIntroToR')
+```
+
