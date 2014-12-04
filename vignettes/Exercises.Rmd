@@ -20,6 +20,7 @@ data(iris)
 ```
 
 1. Use your R skills to learn a little about the size and structure of the iris data.  Consider using `head`,`tail`,`dim`,`nrow`,`class`.
+
 ```{r results='hide',eval=TRUE,echo=FALSE}
 class(iris)
 colnames(iris)
@@ -30,7 +31,9 @@ nrow(iris)
 complete.cases(iris)
 str(iris)
 ```
-2. Get some summary statistics for the dataset.  Consider tools like `summary`, `mean`, `median`, `sd`, `IQR`.
+
+2. Get some summary statistics for the dataset.  Consider tools like `summary`, `mean`, `median`, `sd`, `IQR`.  
+
 ```{r results='hide',eval=TRUE,echo=FALSE}
 summary(iris)
 apply(iris[,1:4],2,mean)
@@ -38,7 +41,9 @@ apply(iris[,1:4],2,median)
 apply(iris[,1:4],2,IQR)
 apply(iris[,1:4],2,sd)
 ```
+
 3. Use some plots to investigate the relationships between the variables.
+
 ```{r results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
 plot(iris$Sepal.Length,iris$Sepal.Width)
 plot(iris$Sepal.Length,iris$Sepal.Width,col=iris$Species)
@@ -53,7 +58,9 @@ ggplot(iris,aes(x=Species,y=Petal.Width)) + geom_boxplot()
 ggplot(iris,aes(x=Petal.Width,y=Sepal.Width)) + geom_point()
 ggplot(iris,aes(x=Petal.Width,y=Sepal.Width,color=Species)) + geom_point()
 ```
+
 4. Quantify the relationships between the quantitative variables.
+
 ```{r results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
 cor(iris[,1:4])
 cor.test(iris$Sepal.Length,iris$Sepal.Width)
@@ -61,7 +68,9 @@ ggplot(iris,aes(x=Sepal.Length,y=Sepal.Width,color=Species)) + geom_point()
 pairs(iris[,1:4],col=iris$Species)
 cor.test(iris$Petal.Length,iris$Petal.Width)
 ```
-5. Bonus: Use the randomForest package to predict the flower species 
+
+5. Bonus: Use the randomForest package to predict the flower species based on the data.
+
 ```{r results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
 library(randomForest)
 res = randomForest(Species ~ .,data=iris)
