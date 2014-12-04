@@ -1,5 +1,23 @@
-%\VignetteEngine{knitr::knitr}
+---
+author: Sean Davis
+title: Basic R Exercises
+output:
+  BiocStyle::html_document:
+    toc: true
+---
+<!--
+%% \VignetteEngine{knitr::rmarkdown}
 %\VignetteIndexEntry{02 Basic Exercises}
+-->
+
+```{r setup,echo=FALSE,results="hide"}
+library(knitr)
+BiocStyle::markdown()
+opts_chunk$set(warning=FALSE,message=FALSE,fig.show='hide',cache=TRUE)
+biocurl = function(x) {
+  return(sprintf("http://www.bioconductor.org/packages/release/bioc/html/%s.html",x))
+}
+```
 
 # Some R data manipulation and plotting exercises
 
@@ -88,7 +106,114 @@ To load the data:
 brfss = read.csv(system.file(package='SDIntroToR','extdata/BRFSS-subset.csv'))
 ```
 
-Explore the data in any way that you like, including plots, summaries, and data manipulations.  As an additional exercise, create a function that takes a vector of weights (in kg) and heights (in cm) and returns the Body Mass Index (BMI). 
+- Exercise: Explore the data in any way that you like, including plots, summaries, and data manipulations.  
+- Exercise, create a function that takes a vector of weights (in kg) and heights (in cm) and returns the Body Mass Index (BMI). 
 
 http://www.cdc.gov/healthyweight/assessing/bmi/adult_bmi/index.html#Interpreted
  
+## Ensembl Genes using biomaRt
+
+### Background
+
+In recent years a wealth of biological data has become available in public
+data repositories. Easy access to these valuable data resources and firm
+integration with data analysis is needed for comprehensive bioinformatics
+data analysis. The biomaRt package, provides an interface to a growing
+collection of databases implementing the BioMart software suite (http://
+www.biomart.org). The package enables retrieval of large amounts of data
+in a uniform way without the need to know the underlying database schemas
+or write complex SQL queries. Examples of BioMart databases are Ensembl,
+Uniprot and HapMap. These major databases give biomaRt users direct
+access to a diverse set of data and enable a wide range of powerful online
+queries from R.
+
+In this exercise, we are going to use the [biomaRt Bioconductor package](`biocurl('biomaRt')`) to get a 
+dataset with biologically-related data to play with using the dplyr and ggplot2 
+packages.
+
+### Getting started
+
+The biomaRt package is a Bioconductor package, so we need to install it before we can use it.
+
+```{r installBiomart,echo=TRUE,eval=FALSE}
+source('http://bioconductor.org/biocLite.R')
+biocLite('biomaRt')
+```
+
+Before we can use the package, we need to actually load it into our R session.
+
+```{r libraryBiomart}
+library(biomaRt)
+```
+
+### Connecting to a biomaRt
+
+The next step is to connect to a Biomart database.  While this looks a little magical, the biomaRt vignette shows examples and the help pages can be used to get details on how to do this.  In this case, I'll simply supply the code for you.
+
+```{r getABiomartDatabase}
+ensembl = useMart("ensembl",dataset="hsapiens_gene_ensembl")
+```
+
+### Executing the Biomart Query
+
+While biomaRt can be used for many purposes, we are using it here as an easy way to get information about genes. I want to get the following information back from biomart:
+
+- Ensembl Gene ID
+- HUGO Gene Symbol
+- Gene Description
+- Number of transcripts
+- chromosome
+- strand
+- GC %
+- Gene type
+- Status (novel or known)
+- phenotype description
+
+Again, we'll simply use the code below.  The details can be sought from the documentation.
+
+```{r biomartQuery}
+genes = getBM(mart=ensembl,attributes=c("ensembl_gene_id",
+                                         "description",
+                                         "chromosome_name",
+                                         "strand",
+                                         "percentage_gc_content",
+                                         "transcript_count",
+                                         "gene_biotype",
+                                         "status",
+                                         "hgnc_symbol",
+                                         "phenotype_description"))
+```
+
+- Exercise: Investigate the structure of the `genes` object using functions such as `class`, `dim`, `colnames`, `summary`, etc.
+- Exercise: What is the range of the `percentage_gc_content`? How could you visualize this range of values effectively?
+```{r gcPercentExercise,include=FALSE}
+summary(genes$percentage_gc_content)
+range(genes$percentage_gc_content)
+range(genes$percentage_gc_content,na.rm=TRUE)
+hist(genes$percentage_gc_content)
+ggplot(genes,aes(x=percentage_gc_content)) + geom_histogram(binwidth=1)
+```
+- Exercise: What are the possible categories for the `gene_biotype` column?  How many genes fall into each category?
+```{r biotypeExercise,include=FALSE}
+unique(genes$gene_biotype)
+table(genes$gene_biotype)
+```
+- Exercise: Filter the `genes` data to include only those on the positive strand.
+```{r posStrandExercise,include=FALSE}
+table(genes$strand)
+genesPositiveStrand = genes[genes$strand==1,]
+```
+- Exercise: Use `ggplot2` to make a boxplot of GC content for each different type of `gene_biotype`.
+```{r ggplotGeneBiotype,include=FALSE}
+library(ggplot2)
+ggplot(genes,aes(y=percentage_gc_content,x=gene_biotype)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 45, hjust=1))
+```
+
+# Session Info
+```{r sessionInfo}
+sessionInfo()
+```
+
+
+

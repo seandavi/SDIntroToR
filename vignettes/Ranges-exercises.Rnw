@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{06 Range-based Containers -- Exercises}
+%\VignetteIndexEntry{06 Range-based Container Exercises}
 %\VignetteEngine{knitr::knitr}
 %\VignetteDepends{BiocStyle}
 

@@ -1,0 +1,122 @@
+---
+author: Sean Davis
+title: Introduction to the Grammar of Graphics, ggplot2
+output:
+  BiocStyle::html_document:
+    toc: true
+---
+<!--
+%% \VignetteEngine{knitr::rmarkdown}
+%\VignetteIndexEntry{02 ggplot2 Introduction}
+-->
+
+```{r setup,echo=FALSE,results="hide"}
+library(knitr)
+BiocStyle::markdown()
+opts_chunk$set(warning=FALSE,message=FALSE,cache=TRUE)
+biocurl = function(x) {
+  return(sprintf("http://www.bioconductor.org/packages/release/bioc/html/%s.html",x))
+}
+```
+
+## Introduction
+
+The `CRANpkg('ggplot2')` package is a relatively novel approach to generating highly informative publication-quality graphics. The "gg" stands for "Grammar of Graphics". In short, instead of thinking about a single function that produces a plot, `CRANpkg('ggplot2')` uses a "grammar" approach, akin to building more and more complex sentences to layer on more information or nuance. 
+
+## Data Model
+
+The `CRANpkg('ggplot2')` package assumes that data are in the form of a data.frame. In some cases, the data will need to be manipulated into a form that matches assumptions that `CRANpkg('ggplot2')` uses.  In particular, if one has a *matrix* of numbers associated with different subjects (samples, people, etc.), the data will usually need to be transformed into a "long" data frame. 
+
+## Getting started
+
+To use the `CRANpkg('ggplot2')` package, it must be installed and loaded. Assuming that installation has been done already, we can load the package directly:
+
+```{r load}
+library(ggplot2)
+```
+
+## Playing with ggplot2
+
+### mtcars data
+
+We are going to use the mtcars dataset, included with R, to experiment with `CRANpkg('ggplot2')`.  
+
+```{r mtcarsLoad}
+data(mtcars)
+```
+
+- Exercise: Explore the `mtcars` dataset using `View`, `summary`, `dim`, `class`, etc.
+
+We can also take a quick look at the relationships between the variables using the `pairs` plotting function.
+
+```{r mtcarsPlot,fig.show="hide"}
+pairs(mtcars)
+```
+
+That is a useful view of the data. We want to use `CRANpkg('ggplot2')` to make an informative plot, so let's approach this in a piecewise fashion.  We first need to decide what type of plot to produce and what our basic variables will be.  In this case, we have a number of choices.  
+
+```{r ggplotS1,eval=FALSE}
+ggplot(mtcars,aes(x=disp,y=hp))
+```
+
+First, a little explanation is necessary.  The `ggplot` function takes as its first argument a `data.frame`.  The second argument is the "aesthetic", `aes`.  The `x` and `y` take column names from the `mtcars` `data.frame` and will form the basis of our scatter plot. 
+
+But why did we get that "Error: No layers in plot"? Remember that *ggplot2* is a "grammar of graphics". We supplied a subject, but no verb (called a *layer* by ggplot2). So, to generate a plot, we need to supply a verb.  There are many possibilities. Each "verb" or *layer* typically starts with "geom" and then a descriptor. An example is necessary.
+
+```{r ggplotS2}
+ggplot(mtcars,aes(x=disp,y=hp)) + geom_point()
+```
+
+We finally produced a plot. The power of *ggplot2*, though, is the ability to make very rich plots by adding "grammar" to the "plot sentence". We have a number of other variables in our `mtcars` `data.frame`. How can we add another value to a two-dimensional plot?
+
+```{r ggplotS3}
+ggplot(mtcars,aes(x=disp,y=hp,color=cyl)) + geom_point()
+```
+
+The color of the points is a based on the numeric variable `wt`, the weight of the car. Can we do more? We can change the size of the points, also.
+
+```{r ggplotS4}
+ggplot(mtcars,aes(x=disp,y=hp,color=wt,size=mpg)) + geom_point()
+```
+
+So, on our 2D plot, we are now plotting four variables.  Can we do more? We can manipulate the shape of the points in addition to the color and the size.
+
+```{r ggplotS5,eval=FALSE}
+ggplot(mtcars,aes(x=disp,y=hp)) + geom_point(aes(size=mpg,color=wt,shape=cyl))
+```
+
+Why did we get that error? Ggplot2 is trying to be helpful by telling us that a "continuous varialbe cannot be mapped to 'shape'". Well, in our `mtcars` `data.frame`, we can look at `cyl` in detail.
+
+```{r cylCheck}
+class(mtcars$cyl)
+summary(mtcars$cyl)
+table(mtcars$cyl)
+```
+
+The `cyl` variable is "kinda" continuous in that it is numeric, but it could also be thought of as a "category" of engines. R has a specific data type for "category" data, called a *factor*. We can easily convert the `cyl` column to a factor like so:
+
+```{r cylFactor}
+mtcars$cyl = as.factor(mtcars$cyl)
+```
+
+Now, we can go ahead with our previous approach to make a 2-dimensional plot that displays the relationships between *five* variables.
+
+```{r ggplotS6}
+ggplot(mtcars,aes(x=disp,y=hp)) + geom_point(aes(size=mpg,color=wt,shape=cyl))
+```
+
+### NYC Flight data
+
+I leave this section open-ended for you to explore further options with the *ggplot2* package.  The data represent the on-time data for all flights that departed New York City in 2013.
+
+```{r nycflights1}
+library(nycflights13)
+head(flights)
+```
+
+Feel free to explore. Consider using other "geoms" during your exploration.
+
+## Session Info
+```{r sessionInfo}
+sessionInfo()
+```

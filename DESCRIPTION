@@ -7,7 +7,8 @@ Author: Sean Davis
 Maintainer: Sean Davis <sdavis2@mail.nih.gov>
 Description: This package contains an interactive slide deck meant as a 4-5 hour introduction to R concepts.  RStudio is also introduced as the interface for R.  
 Depends: ggplot2, randomForest, GenomicRanges, ShortRead, 
-  BSgenome.Scerevisiae.UCSC.sacCer2, TxDb.Hsapiens.UCSC.hg19.knownGene, dplyr
-Suggests: knitr, BiocStyle
+  BSgenome.Scerevisiae.UCSC.sacCer2, TxDb.Hsapiens.UCSC.hg19.knownGene, dplyr,
+  shiny, nycflights13
+Suggests: knitr, BiocStyle, rmarkdown
 VignetteBuilder: knitr
 License: MIT
