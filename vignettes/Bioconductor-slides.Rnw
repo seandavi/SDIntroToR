@@ -1,5 +1,5 @@
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{01 Project Overview -- Slides}
+%\VignetteIndexEntry{05 Bioconductor Overview Slides}
 
 \documentclass[xcolor=dvipsnames]{beamer}
 \usepackage{BioconductorSlides}
@@ -16,8 +16,8 @@
 \title{R / Bioconductor for Analysis and
   Comprehension of High-Throughput Sequence Data}
 \author{Martin T. Morgan (\url{mtmorgan@fhcrc.org}) \\
-  With Modifications by Sean Davis for CSHL 2014}
-\date{19 June 2014}
+  With Modifications by Sean Davis}
+\date{December 3, 2014}
 
 \maketitle
 

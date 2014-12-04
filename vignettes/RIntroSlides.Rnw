@@ -12,7 +12,8 @@
 % page numbers and using Warsaw theme%
 % \setbeamertemplate{footline}[page number]
 %\setbeamercovered{transparent}
-%\VignetteIndexEntry{R Intro Slides}
+%\VignetteEngine{knitr::knitr}
+%\VignetteIndexEntry{01 R Intro Slides}
 \setbeamercovered{invisible}
 % To remove the navigation symbols from 
 % the bottom of slides%

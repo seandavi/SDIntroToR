@@ -1,5 +1,5 @@
 %\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{R Intro Slides}
+%\VignetteIndexEntry{02 Basic Exercises}
 
 # Some R data manipulation and plotting exercises
 
@@ -21,7 +21,7 @@ data(iris)
 
 1. Use your R skills to learn a little about the size and structure of the iris data.  Consider using `head`,`tail`,`dim`,`nrow`,`class`.
 
-```{r results='hide',eval=TRUE,echo=FALSE}
+```{r number1,results='hide',eval=TRUE,echo=FALSE}
 class(iris)
 colnames(iris)
 head(iris)
@@ -32,9 +32,9 @@ complete.cases(iris)
 str(iris)
 ```
 
-2. Get some summary statistics for the dataset.  Consider tools like `summary`, `mean`, `median`, `sd`, `IQR`.  
+2. Get some summary statistics for the dataset.  Consider tools like `summary`, `mean`, `median`, `sd`, `IQR`. 
 
-```{r results='hide',eval=TRUE,echo=FALSE}
+```{r number2,results='hide',eval=TRUE,echo=FALSE}
 summary(iris)
 apply(iris[,1:4],2,mean)
 apply(iris[,1:4],2,median)
@@ -44,7 +44,7 @@ apply(iris[,1:4],2,sd)
 
 3. Use some plots to investigate the relationships between the variables.
 
-```{r results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
+```{r number3,results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
 plot(iris$Sepal.Length,iris$Sepal.Width)
 plot(iris$Sepal.Length,iris$Sepal.Width,col=iris$Species)
 plot(iris$Sepal.Length,iris$Sepal.Width,pch=as.numeric(iris$Species))
@@ -61,7 +61,7 @@ ggplot(iris,aes(x=Petal.Width,y=Sepal.Width,color=Species)) + geom_point()
 
 4. Quantify the relationships between the quantitative variables.
 
-```{r results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
+```{r number4,results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
 cor(iris[,1:4])
 cor.test(iris$Sepal.Length,iris$Sepal.Width)
 ggplot(iris,aes(x=Sepal.Length,y=Sepal.Width,color=Species)) + geom_point()
@@ -71,7 +71,7 @@ cor.test(iris$Petal.Length,iris$Petal.Width)
 
 5. Bonus: Use the randomForest package to predict the flower species based on the data.
 
-```{r results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
+```{r number5,results='hide',eval=TRUE,echo=FALSE,fig.show='hide'}
 library(randomForest)
 res = randomForest(Species ~ .,data=iris)
 res
@@ -84,11 +84,11 @@ You have been given a dataset that represents basic measurements of people over 
 
 To load the data:
 
-```{r}
+```{r readBRFSS}
 brfss = read.csv(system.file(package='SDIntroToR','extdata/BRFSS-subset.csv'))
 ```
 
-Explore the data in any way that you like, including plots, summaries, and data manipulations.  As an additional exercise, create a function that takes a vector of weights (in kg) and heights (in cm) and returns the Body Mass Index (BMI).
+Explore the data in any way that you like, including plots, summaries, and data manipulations.  As an additional exercise, create a function that takes a vector of weights (in kg) and heights (in cm) and returns the Body Mass Index (BMI). 
 
 http://www.cdc.gov/healthyweight/assessing/bmi/adult_bmi/index.html#Interpreted
  
