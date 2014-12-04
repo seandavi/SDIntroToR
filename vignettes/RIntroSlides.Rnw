@@ -24,9 +24,11 @@
 \definecolor{Scode}{rgb}{0.75,0.19,0.19}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage{BioconductorSlides}
 %\usepackage{bm}         % For typesetting bold math (not \mathbold)
 %\logo{\includegraphics[height=0.6cm]{yourlogo.eps}}
 %
+
 \title[Introduction to R]{A Not-so-brief Introduction to R}
 \author{Sean Davis\\
 with large contributions by\\
@@ -38,10 +40,19 @@ National Institutes of Health\\
 \medskip
 {\emph{sdavis2@mail.nih.gov}}
 }
-\date{June 18, 2014}
+\date{}
 %
 \begin{document}
-\SweaveOpts{concordance=TRUE}
+
+<<include=FALSE>>=
+library(knitr)
+opts_chunk$set(
+concordance=TRUE,
+highlight=FALSE
+)
+opts_chunk$set(size="scriptsize")
+@
+
 %\setcounter{tocdepth}{1}
 \DefineVerbatimEnvironment{Sinput}{Verbatim}
 {formatcom = {\color{Sinput}},fontsize=\scriptsize}
@@ -191,13 +202,13 @@ abc1234asdf
   \frametitle{R Help Functions}
   \begin{itemize}
     \item{If you know the name of the function or object on which you want help:}
-<<help1,eval=False>>=
+<<help1,eval=FALSE>>=
 help(print)
 help('print')
 ?print
 @ 
     \item{If you \textit{do not} know the name of the function or object on which you want help:}
-<<help2,eval=False>>=
+<<help2,eval=FALSE>>=
 help.search('microarray')
 RSiteSearch('microarray')
 @
@@ -356,7 +367,7 @@ x = seq(0,1,0.1)
 x[4]
 @ 
     \item{Indexing can use other vectors for the indexing}
-<<vectorindexing1>>=
+<<vectorindexing11>>=
 x[c(3,5,6)]
 y = 3:6
 x[y]
@@ -537,7 +548,7 @@ summary(m)
 \subsection{Data Frames}
 \begin{frame}[fragile]
   \frametitle{Matrices Versus Data Frames}
-<<matricesvsdataframes>>=
+<<matricesvsdataframes1>>=
 mat<-cbind(x,y)
 class(mat[,1])			
 z = paste0('a',1:10)
@@ -571,7 +582,7 @@ tab$x
 tab$y
 @ 
     \item{Column names can be set, which can be useful for referring to data later}
-<<dataframecolumns>>=
+<<dataframecolumns1>>=
 colnames(tab)
 colnames(tab) = paste0('col',1:3)
 @ 
@@ -583,7 +594,7 @@ colnames(tab) = paste0('col',1:3)
 \begin{frame}[fragile]
   \frametitle{Exercise: Subsetting Data Frames}
 Try these 
-<<subsettingdf,results=hide>>=
+<<subsettingdf,results='hide'>>=
 ncol(tab)
 nrow(tab)
 dim(tab)
@@ -612,7 +623,7 @@ rm(tab)
 ls(pattern="tab")
 @ 
     \item{The \texttt{read.table} function and friends read a data.frame or matrix from a text file.}
-<<dfio1>>=
+<<dfio2>>=
 tab = read.table('tab.txt',sep="\t",header=TRUE)
 head(tab,3)
 @ 
@@ -710,7 +721,7 @@ names(tab)
     \item{A legend can be created using \texttt{legend}.}
   \end{itemize}
   \begin{block}{demo}
-<<eval=false>>=
+<<eval=FALSE>>=
 demo(graphics)
 @ 
   \end{block}
@@ -719,7 +730,7 @@ demo(graphics)
 \begin{frame}[fragile]
   \frametitle{Simple Plotting Example}
   Try this yourself:
-<<plots,results=hide>>=
+<<plots,results='hide'>>=
 x = 1:100
 y = rnorm(100,3,1) # 100 random normal deviates with mean=3, sd=1
 plot(x,y)
@@ -735,7 +746,7 @@ lines(x,y,col=3)
 
 \begin{frame}[fragile]
   \frametitle{More Plotting}
-<<plots2,results=hide>>=
+<<plots2,results='hide'>>=
 z=sort(y)
 # plot a sorted variable vs x
 plot(x,z,main='Random Normal Numbers',
@@ -749,7 +760,7 @@ points(0,2,pch=6,col=12)
 
 \begin{frame}[fragile]
   \frametitle{More Plotting}
-<<plots2,results=hide>>=
+<<plots3,results='hide'>>=
 # check margin and outer margin settings
 par(c("mar", "oma")) 
 plot(x,y)
@@ -787,14 +798,14 @@ plot(density(z, adjust=0.5),
   \frametitle{More Plotting}
   \begin{itemize}
     \item{Save a png image to a file}
-<<plotssave1,results=hide>>=
+<<plotssave1,results='hide'>>=
 png(file="myplot.png",width=480,height=480)
 plot(density(z,adjust=2.0),sub="larger bandwidth")
 dev.off()
 @
     \item{On your own, save a pdf to a file.  NOTE: The dimensions in \texttt{pdf()} are in \textit{inches}}
     \item{Multiple plots on the same page:}
-<<mfrow,results=hide>>=
+<<mfrow,results='hide'>>=
 par(mfrow=c(2,1))
 plot(density(z,adjust=2.0),sub="larger bandwidth")
 hist(z)
@@ -840,7 +851,7 @@ some operations
 
 \begin{frame}[fragile]
   \frametitle{Control Structure and Looping Examples}
-<<controlloop1,results=hide>>=
+<<controlloop1,results='hide'>>=
 x<-1:9
 length(x)
 # a simple conditional then two expressions
@@ -860,7 +871,7 @@ for(i in x) i	# note R will not echo in a loop
 
 \begin{frame}[fragile]
   \frametitle{Control Structure and Looping Examples}
-<<controlloop2,results=hide>>=
+<<controlloop2,results='hide'>>=
 # loop over a character vector
 y<-c('a','b','hi there')			
 for (i in y) print(i)
@@ -909,7 +920,7 @@ apply(mat,2,fun) # over columns--second argument is 2\end{verbatim}
 
 \begin{frame}[fragile]
   \frametitle{Related Apply Function Examples}
-<<relapply,results=hide>>=
+<<relapply,results='hide'>>=
 # create a list
 my.list <- list(a=1:3,b=5:10,c=11:20)
 my.list
@@ -956,7 +967,7 @@ add1(17)
 add1(c(17,18,19,20))
 @ 
 You can use the \texttt{edit()} function to make changes to a function.  The following command will open a window, allow you to make changes, and assign the result to a new function, \texttt{add2}.
-<<editfunction,eval=false>>=
+<<editfunction,eval=FALSE>>=
 add2 = edit(add1)
 @
 \end{frame}
