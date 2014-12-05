@@ -16,9 +16,9 @@ devtools::install_github('seandavi/SDIntroToR')
 
 Where are the slides?
 =====================
-After installing the package, the slides are available by typing:
+After installing the package, various exercise sets and R Intro slides are available by typing:
 
 ```{r}
-vignette('RIntroSlides','SDIntroToR')
+browseVignettes(package='SDIntroToR')
 ```
 
