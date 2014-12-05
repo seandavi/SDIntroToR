@@ -10,7 +10,9 @@ This package contains a set of instructional material to introduce R in a guided
 2. Paste the following code into your R session
 
 ```{r}
-install.packages('SDIntroToR',repos='http://watson.nci.nih.gov/~sdavis/software/R')
+source('http://bioconductor.org/biocLite.R')
+biocLite('SDIntroToR',siteRepos = "http://watson.nci.nih.gov/~sdavis/software/R")
+
 ```
 
 ## Linux/Mac 
@@ -19,8 +21,8 @@ install.packages('SDIntroToR',repos='http://watson.nci.nih.gov/~sdavis/software/
 2. Paste the following code into your R session
 
 ```{r}
-install.packages('devtools')
-devtools::install_github('seandavi/SDIntroToR')
+source('http://bioconductor.org/biocLite.R')
+biocLite('SDIntroToR',siteRepos = "http://watson.nci.nih.gov/~sdavis/software/R",type="source")
 ```
 
 # Where are the slides?
