@@ -8,7 +8,7 @@ pdf: Exercises.pdf ggplot2.pdf Ranges-exercises.pdf RIntroSlides.pdf Bioconducto
 	Rscript -e "library(rmarkdown); rmarkdown::render('$<',BiocStyle::pdf_document())"
 
 %.html: %.Rmd
-	Rscript -e "library(rmarkdown); rmarkdown::render('$<',knitrBootstrap::html_document())"
+	Rscript -e "library(rmarkdown); rmarkdown::render('$<',BiocStyle::html_document())"
 
 %.pdf: %.Rnw
 	Rscript -e "library(knitr); knit('$<')"
