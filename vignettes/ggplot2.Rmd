@@ -10,7 +10,7 @@ output:
 %\VignetteIndexEntry{02 ggplot2 Introduction}
 -->
 
-```{r setup,echo=FALSE,results="hide"}
+```{r setup,echo=FALSE,results="hide",warning=FALSE,message=FALSE}
 library(knitr)
 BiocStyle::markdown()
 opts_chunk$set(warning=FALSE,message=FALSE,cache=TRUE)
@@ -19,15 +19,15 @@ biocurl = function(x) {
 }
 ```
 
-## Introduction
+# Introduction
 
 The `CRANpkg('ggplot2')` package is a relatively novel approach to generating highly informative publication-quality graphics. The "gg" stands for "Grammar of Graphics". In short, instead of thinking about a single function that produces a plot, `CRANpkg('ggplot2')` uses a "grammar" approach, akin to building more and more complex sentences to layer on more information or nuance. 
 
-## Data Model
+# Data Model
 
 The `CRANpkg('ggplot2')` package assumes that data are in the form of a data.frame. In some cases, the data will need to be manipulated into a form that matches assumptions that `CRANpkg('ggplot2')` uses.  In particular, if one has a *matrix* of numbers associated with different subjects (samples, people, etc.), the data will usually need to be transformed into a "long" data frame. 
 
-## Getting started
+# Getting started
 
 To use the `CRANpkg('ggplot2')` package, it must be installed and loaded. Assuming that installation has been done already, we can load the package directly:
 
@@ -35,9 +35,9 @@ To use the `CRANpkg('ggplot2')` package, it must be installed and loaded. Assumi
 library(ggplot2)
 ```
 
-## Playing with ggplot2
+# Playing with ggplot2
 
-### mtcars data
+## mtcars data
 
 We are going to use the mtcars dataset, included with R, to experiment with `CRANpkg('ggplot2')`.  
 
@@ -105,7 +105,7 @@ Now, we can go ahead with our previous approach to make a 2-dimensional plot tha
 ggplot(mtcars,aes(x=disp,y=hp)) + geom_point(aes(size=mpg,color=wt,shape=cyl))
 ```
 
-### NYC Flight data
+## NYC Flight data
 
 I leave this section open-ended for you to explore further options with the *ggplot2* package.  The data represent the on-time data for all flights that departed New York City in 2013.
 
@@ -116,7 +116,7 @@ head(flights)
 
 Feel free to explore. Consider using other "geoms" during your exploration.
 
-## Session Info
+# Session Info
 ```{r sessionInfo}
 sessionInfo()
 ```
