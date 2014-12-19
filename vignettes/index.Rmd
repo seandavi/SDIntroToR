@@ -1,0 +1,32 @@
+---
+title: "Vector Exercises"
+author: "Sean Davis"
+output:
+  BiocStyle::html_document:
+    toc: true
+---
+
+## Teaching slides
+
+- [pdf](RIntroSlides.pdf)
+- [Rnw](RIntroSlides.Rnw)
+- [R Code](RIntroSlides.R)
+
+## Vector exercises
+
+- [html](vectors-exercises.html)
+- [pdf](vectors-exercises.pdf)
+- [Rmd](vectors-exercises.Rmd)
+- [R Code](vectors-exercises.R)
+
+## ggplot exercises
+
+- [html](ggplot2.html)
+- [pdf](ggplot2.pdf)
+- [Rmd](ggplot2.Rmd)
+- [R Code](ggplot2.R)
+
+## Data exploration exercises
+
+- [html](Exercises.html)
+- [R Code](Exercises.R)
