@@ -1,10 +1,14 @@
-all: html pdf R
+all: html pdf Rcode upload
 
-html: Data-exercises.html ggplot2.html Ranges-exercises.html vectors-exercises.html index.html
+HTML = Data-exercises.html ggplot2.html Ranges-exercises.html vectors-exercises.html index.html
 
-pdf: Data-exercises.pdf ggplot2.pdf Ranges-exercises.pdf RIntroSlides.pdf Bioconductor-slides.pdf vectors-exercises.pdf index.pdf
+PDF = Data-exercises.pdf ggplot2.pdf Ranges-exercises.pdf RIntroSlides.pdf Bioconductor-slides.pdf vectors-exercises.pdf index.pdf
 
-R: Data-exercises.R ggplot2.R Ranges-exercises.R RIntroSlides.R Bioconductor-slides.R vectors-exercises.R index.R
+RCODE = Data-exercises.R ggplot2.R Ranges-exercises.R RIntroSlides.R Bioconductor-slides.R vectors-exercises.R
+
+html: $(HTML)
+pdf:  $(PDF)
+Rcode:$(RCODE)
 
 %.R: %.Rmd
 	Rscript -e "library(knitr); purl('$<')"
@@ -19,7 +23,7 @@ R: Data-exercises.R ggplot2.R Ranges-exercises.R RIntroSlides.R Bioconductor-sli
 	Rscript -e "library(rmarkdown); rmarkdown::render('$<',BiocStyle::html_document())"
 
 %.pdf: %.Rnw
-	Rscript -e "library(knitr); knit('$<')"
+	Rscript -e "library(knitr); knit2pdf('$<')"
 
 %.html: %.tex
 	pandoc -t html -f latex -o $@ $<
@@ -27,3 +31,5 @@ R: Data-exercises.R ggplot2.R Ranges-exercises.R RIntroSlides.R Bioconductor-sli
 %.tex: %.Rnw
 	Rscript -e "library(knitr); knit('$<')"
 
+upload: html pdf Rcode
+	rsync $(HTML) $(RCODE) $(PDF) BRFSS-subset.csv get.R rgale:public_html/tutorials/IntroToR/

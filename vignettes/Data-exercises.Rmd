@@ -96,20 +96,6 @@ res
 varImpPlot(res)
 ```
 
-## Behavioral Risk Factor Surveillance System
-
-You have been given a dataset that represents basic measurements of people over time.  Explore the data interactively to learn about trends or other features of interest in the data.  
-
-To load the data:
-
-```{r readBRFSS}
-brfss = read.csv(system.file(package='SDIntroToR','extdata/BRFSS-subset.csv'))
-```
-
-- Exercise: Explore the data in any way that you like, including plots, summaries, and data manipulations.  
-- Exercise, create a function that takes a vector of weights (in kg) and heights (in cm) and returns the Body Mass Index (BMI). 
-
-http://www.cdc.gov/healthyweight/assessing/bmi/adult_bmi/index.html#Interpreted
  
 ## Ensembl Genes using biomaRt
 
@@ -209,6 +195,22 @@ library(ggplot2)
 ggplot(genes,aes(y=percentage_gc_content,x=gene_biotype)) + geom_boxplot() + 
   theme(axis.text.x = element_text(angle = 45, hjust=1))
 ```
+
+## Behavioral Risk Factor Surveillance System
+
+You have been given a dataset that represents basic measurements of people over time.  Explore the data interactively to learn about trends or other features of interest in the data.  
+
+To load the data:
+
+```{r readBRFSS}
+brfss = read.csv("http://watson.nci.nih.gov/~sdavis/tutorials/IntroToR/BRFSS-subset.csv")
+```
+
+- Exercise: Explore the data in any way that you like, including plots, summaries, and data manipulations.  
+- Exercise, create a function that takes a vector of weights (in kg) and heights (in cm) and returns the Body Mass Index (BMI). 
+
+http://www.cdc.gov/healthyweight/assessing/bmi/adult_bmi/index.html#Interpreted
+
 
 # Session Info
 ```{r sessionInfo}
