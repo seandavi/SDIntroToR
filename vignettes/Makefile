@@ -1,10 +1,10 @@
 all: html pdf R
 
-html: Exercises.html ggplot2.html Ranges-exercises.html vectors-exercises.html index.html
+html: Data-exercises.html ggplot2.html Ranges-exercises.html vectors-exercises.html index.html
 
-pdf: Exercises.pdf ggplot2.pdf Ranges-exercises.pdf RIntroSlides.pdf Bioconductor-slides.pdf vectors-exercises.pdf index.pdf
+pdf: Data-exercises.pdf ggplot2.pdf Ranges-exercises.pdf RIntroSlides.pdf Bioconductor-slides.pdf vectors-exercises.pdf index.pdf
 
-R: Exercises.R ggplot2.R Ranges-exercises.R RIntroSlides.R Bioconductor-slides.R vectors-exercises.R index.R
+R: Data-exercises.R ggplot2.R Ranges-exercises.R RIntroSlides.R Bioconductor-slides.R vectors-exercises.R index.R
 
 %.R: %.Rmd
 	Rscript -e "library(knitr); purl('$<')"

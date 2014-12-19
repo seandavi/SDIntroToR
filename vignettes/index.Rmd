@@ -9,24 +9,33 @@ output:
 ## Teaching slides
 
 - [pdf](RIntroSlides.pdf)
-- [Rnw](RIntroSlides.Rnw)
 - [R Code](RIntroSlides.R)
+- [Rnw](RIntroSlides.Rnw)
 
 ## Vector exercises
 
 - [html](vectors-exercises.html)
+- [R Code](vectors-exercises.R)
 - [pdf](vectors-exercises.pdf)
 - [Rmd](vectors-exercises.Rmd)
-- [R Code](vectors-exercises.R)
 
 ## ggplot exercises
 
 - [html](ggplot2.html)
+- [R Code](ggplot2.R)
 - [pdf](ggplot2.pdf)
 - [Rmd](ggplot2.Rmd)
-- [R Code](ggplot2.R)
 
 ## Data exploration exercises
 
-- [html](Exercises.html)
-- [R Code](Exercises.R)
+- [html](Data-exercises.html)
+- [R Code](Data-exercises.R)
+- [pdf](Data-exercises.html)
+- [Rmd](Data-exercises.Rmd)
+
+## Ranges exercises [Bioconductor]
+
+- [html](Ranges-exercises.html)
+- [R Code](Ranges-exercises.R)
+- [pdf](Ranges-exercises.html)
+- [Rmd](Ranges-exercises.Rmd)
