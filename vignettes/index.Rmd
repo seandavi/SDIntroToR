@@ -8,7 +8,9 @@ output:
 
 To get all the materials for the class, execute:
 
+```{r eval=FALSE}
 source('http://watson.nci.nih.gov/~sdavis/tutorials/IntroToR/get.R')
+```
 
 ## Teaching slides
 
@@ -42,4 +44,10 @@ source('http://watson.nci.nih.gov/~sdavis/tutorials/IntroToR/get.R')
 - [html](Ranges-exercises.html)
 - [R Code](Ranges-exercises.R)
 - [pdf](Ranges-exercises.html)
-- [Rmd](Ranges-exercises.Rmd)
+- [Rnw](Ranges-exercises.Rnw)
+
+## RNA-seq exercises [Bioconductor]
+
+- [pdf](DESeq2_parathyroid.pdf)
+- [R Code](DESeq2_parathyroid.R)
+- [Rnw](DESeq2_parathyroid.Rnw)

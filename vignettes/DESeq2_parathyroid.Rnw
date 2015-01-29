@@ -1,0 +1,1301 @@
+%\VignetteIndexEntry{DESeq2 Tutorial}
+%\VignetteDepends{DESeq2}
+%\VignetteDepends{parathyroidSE}
+%\VignettePackage{SDIntroToR}
+%\VignetteEngine{knitr::knitr}
+
+% To compile this document
+% library(knitr); knit('DESeq2_parathyroid.Rnw',driver=cacheSweaveDriver()); system('pdflatex DESeq2_parathyroid'); relocateAnswers(); for(i in 1:2) system('pdflatex DESeq2_parathyroid')
+
+\documentclass[12pt]{article}
+\usepackage[left=2cm,top=2cm,bottom=3cm,right=2cm,ignoreheadfoot]{geometry}
+\pagestyle{empty}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{helvet}
+\usepackage[titletoc]{appendix}
+\usepackage{tocloft}
+
+\setlength{\parindent}{0em}
+\setlength{\parskip}{.5em}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\newcommand{\Rcode}[1]{{\texttt{#1}}}
+\newcommand{\Robject}[1]{{\small\texttt{#1}}}
+\newcommand{\Rfunction}[1]{\Robject{#1}}
+\newcommand{\Rpackage}[1]{\textit{#1}}
+\newcommand{\Rclass}[1]{\textit{#1}}
+
+\newcommand{\lowtilde}{\raise.17ex\hbox{$\scriptstyle\mathtt{\sim}$}}
+
+\newcommand{\thetitle}{Differential analysis of RNA-Seq data at the gene level using the DESeq2 package}
+
+\usepackage[pdftitle={\thetitle},%
+  pdfauthor={Michael Love, Simon Anders, Wolfgang Huber, and mods by Sean Davis},%
+  bookmarks,%
+  colorlinks,%
+  linktoc=section,%
+  linkcolor=RedViolet,%
+  citecolor=RedViolet,%
+  urlcolor=RedViolet,%
+  linkbordercolor={1 1 1},%
+  citebordercolor={1 1 1},%
+  urlbordercolor={1 1 1},%
+  raiselinks,%
+  plainpages,%
+  pdftex]{hyperref}
+
+\usepackage{cite}
+\renewcommand{\floatpagefraction}{0.9}
+
+\usepackage{sectsty}
+\sectionfont{\sffamily\bfseries\color{RoyalBlue}\sectionrule{0pt}{0pt}{-1ex}{1pt}}
+\subsectionfont{\sffamily\bfseries\color{RoyalBlue}}
+\subsubsectionfont{\sffamily\bfseries\color{RoyalBlue}}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+\lfoot{}\cfoot{}\rfoot{}
+\renewcommand{\headrule}{}
+
+\usepackage{graphicx}
+
+
+
+<<knitrsetup,echo=FALSE,hide=TRUE>>=
+library(knitr)
+opts_chunk$set(error=FALSE, cache=TRUE, fig.lp='',size='footnotesize',dev=c('pdf','png'),fig.align='center',fig.width=4,fig.height=4.5)
+@
+
+\newcommand{\fixme}[1]{{\textbf{Fixme}: \textit{\textcolor{blue}{#1}}}}
+
+
+%%--Questions and Answers macro; this could be but into a re-usable style file 
+\newcounter{questionCounter}
+\newcounter{answerCounter}
+\newenvironment{question}{%
+\refstepcounter{questionCounter}
+\par \textbf{Question \arabic{questionCounter}}:}{}
+\newenvironment{answer}{%
+\refstepcounter{answerCounter}
+\par \textbf{Answer \arabic{answerCounter}}:}{}
+
+%------- Unsatisfactory attempt at the above:
+%\newcommand{\question}[2]{%
+%\refstepcounter{QuestionsAndAnswersCounter}
+%\paragraph{Question \arabic{QuestionsAndAnswersCounter}}: \textit{#1}
+%\paragraph{Answer to Question \arabic{QuestionsAndAnswersCounter}:  \unexpanded{#2}}}
+%\usepackage{newfile}
+%\openoutputfile{\jobname.qna}{qna}
+%\newoutputstream{qna}
+%\newcommand{\question}[2]{%
+%\refstepcounter{QuestionsAndAnswersCounter}
+%\textbf{Question \arabic{QuestionsAndAnswersCounter}}: \textit{#1}
+%\addtostream{qna}{\unexpanded{\paragraph{Answer to Question \arabic{QuestionsAndAnswersCounter}: #2}}}}
+
+% ------------------------------------------------------------
+\author{Michael Love, Simon Anders, Wolfgang Huber \\
+  \\
+  Minor Modifications by Sean Davis
+}
+\title{\textsf{\textbf{\thetitle}}}
+%------------------------------------------------------------
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+<<options, echo=FALSE>>=
+options(digits=3, width=80)
+#library("cacheSweave")
+#setCacheDir("cachedir")
+@ 
+
+\section{Introduction}
+In this lab, you will learn how to analyse a count table, such as arising from a
+summarised RNA-Seq experiment, for differentially expressed genes.
+
+\section{Input data}
+
+\subsection{Experiment data}
+
+We read in a prepared \Rclass{SummarizedExperiment}, which was 
+generated from publicly available data from the article by
+Felix Haglund et al., ``Evidence of a Functional Estrogen 
+Receptor in Parathyroid Adenomas'', J Clin Endocrin Metab, 
+Sep 2012, \url{http://www.ncbi.nlm.nih.gov/pubmed/23024189}.
+Details on the generation of this object can be found 
+in the vignette for the \Rpackage{parathyroidSE} package,
+\url{http://bioconductor.org/packages/release/data/experiment/html/parathyroidSE.html}.
+
+The purpose of the experiment was to investigate the role of the
+estrogen receptor in parathyroid tumors. The investigators derived 
+primary cultures of parathyroid adenoma cells from 4 patients. These 
+primary cultures were treated with diarylpropionitrile (DPN), 
+an estrogen receptor $\beta$ agonist, or with 4-hydroxytamoxifen (OHT).  
+RNA was extracted at 24 hours and 48 hours from cultures under 
+treatment and control.  The blocked design of the experiment allows
+for statistical analysis of the treatment effects while controlling for patient-to-patient variation.
+
+We first load the \Rpackage{DESeq2} package and the data package \Rpackage{parathyroidSE},
+which contains the example data set.
+
+<<libraries>>=
+library( "DESeq2" )
+library( "parathyroidSE" )
+@ 
+
+The \Rfunction{data} command loads a data object.
+
+<<loadEcs>>=
+data("parathyroidGenesSE")
+@
+
+The information in a \Rclass{SummarizedExperiment} object can be accessed with 
+accessor functions. For example, to see the actual data, i.e., here, the read counts, we
+use the \Rfunction{assay} function. (The \Rfunction{head} function restricts the output to
+the first few lines.)
+
+<<countTable>>=
+head( assay( parathyroidGenesSE ) )
+@
+
+In this count table, each row represents an Ensembl gene, 
+each column a sequenced RNA library, 
+and the values give the raw numbers of sequencing reads that were mapped to the
+respective gene in each library.
+
+\begin{question}
+  For how many genes are there counts in this table?
+\end{question}
+\begin{answer}
+<<nrowSE>>=
+nrow(parathyroidGenesSE)
+@
+\end{answer}
+
+We also have metadata on each of the samples (the ``columns'' of the count table):
+%
+<<colData>>=
+colData( parathyroidGenesSE )
+@
+
+\begin{question}
+What are the metadata for the genes (the ``rows'' of the count table)?
+\end{question}
+\begin{answer}
+<<rowData>>=
+rowData( parathyroidGenesSE )
+@ 
+\end{answer}
+
+\subsection{Collapsing technical replicates}
+
+There are a number of samples which were sequenced in multiple
+runs. For example, sample \Robject{SRS308873} was sequenced twice. To see,
+we list the respective columns of the \Rfunction{colData}. (The use
+of \Rfunction{as.data.frame} forces R to show us the full list, not just
+the beginning and the end as before.)
+
+<<columnData>>=
+as.data.frame( colData(parathyroidGenesSE)[,c("sample","patient","treatment","time")] )
+@ 
+
+We recommend to first add together technical replicates (i.e., libraries
+derived from the same samples), such that we have one column per sample. 
+
+\fixme{Present the 'pedestrian' approach of chunk \texttt{poormanssum} first, only then
+  (and as 'optional') the \Rfunction{sapply}-magic.}
+
+As is often the case, this preparatory step looks more complicated than the subsequent
+actual analysis. In fact, the following operations are not specific to \Rpackage{DESeq2},
+but are specific preparations needed for this data set. To understand the general ideas of
+\Rpackage{DESeq2}, you could now skip to Section~\ref{sec:runDESeq}.  What you will learn in
+the rest of this section is an example of a typical preparatory data manipulation task
+done with elementary R functions.  Details on these can be found in general textbooks on
+R; also consider reading the help pages of the functions used.
+
+We first use the function \Rfunction{split} to see which columns need to be collapsed.
+
+<<split>>=
+allColSamples <- colData(parathyroidGenesSE)$sample
+sp <- split( seq(along=allColSamples), allColSamples )
+@
+
+Using \Rfunction{sapply}, we loop over the elements of \Robject{sp}, which correspond to
+the distinct samples, construct subtables of the count table (i.e., \Rfunction{assay(parathyroidGenesSE)})
+corresponding only to the current sample considered, and add up across rows if there is more than one column.
+The result of the \Rfunction{sapply} call is a new table, in which each column now
+corresponds to a different sample. 
+%
+<<addSamples>>=
+countdata <- sapply(sp, function(columns) 
+   rowSums( assay(parathyroidGenesSE)[,columns,drop=FALSE] ) )
+head(countdata)
+@
+
+Novice users might find the preceding two code chunks difficult.
+Of course, there is a much easier way to add up the columns, namely
+by explicitly specifying the indices of the columns we want to use as is and
+the columns we want to add up, and using \Rfunction{cbind} to bind all the
+columns to a matrix:
+
+<<poormanssum>>=
+a <- assay(parathyroidGenesSE)
+countdata2 <- cbind( a[,1:8], a[,9]+a[,10], a[,11], 
+   a[,12]+a[,13], a[,14:22], a[,23]+a[,24], a[,25], a[,26]+a[,27] )
+all( countdata == countdata2 )
+@
+
+While this is simpler to understand, it is more error-prone. Mistakes can easily happen
+when determining the column indices, and it is tedious to update the code if the input
+data changes, for instance, if at a later time you would like to add more replicates to
+your data set. Hence, if you are a beginner in R and want to improve your R skills, try to
+understand how the \Rfunction{split} and the \Rfunction{sapply} calls above work, because
+only learning to master such expressions will give you the skills to make full use of R.
+
+Having reduced our count data table to only one column per sample, 
+we next need to subset the column metadata
+accordingly, as we now have less columns. We also now
+use the sample names as names for the column data rows:
+%
+<<subsetMetaData>>=
+coldata <- colData(parathyroidGenesSE)[sapply(sp, `[`, 1),]
+rownames(coldata) <- coldata$sample
+coldata
+@
+%
+\begin{question}
+  What do the quotation marks in the expression \Robject{`[`} do? What happens if you omit them?
+\end{question}
+\begin{answer}
+  
+  The function \Rfunction{sapply} expects an R function as its second argument. Here, we
+  want to provide it with the function for vector subsetting (as in \Robject{a[1]}), and
+  the name of this function is \Robject{[}. However, if we provide that name without the
+  quotation marks, the R interpreter gets confused and complains about the unexpected
+  symbol (try this out). Hence we need to quote the function name in our call to \Rfunction{sapply}.
+  
+\end{answer}
+
+To unclutter the output in the subsequent steps, we only keep the column data columns
+that we actually need for our analysis.
+%
+<<colDataSubsetCols>>=
+coldata <- coldata[ , c( "patient", "treatment", "time" ) ]
+head( coldata )
+@
+
+Our \Rclass{SummarizedExperiment} object also contains metadata on the rows,
+which we can simply keep unchanged:
+
+<<rowdata>>=
+rowdata <- rowData(parathyroidGenesSE)
+rowdata
+@
+
+We now have all the ingredients to prepare our data object in a form that is suitable for analysis, namely:
+
+\begin{itemize}
+\item \Robject{countdata}: a table with the read counts, with 
+technical replicates summed up,
+\item \Robject{coldata}: a table with metadata on the
+  count table's columns, i.e., on the samples,
+\item \Robject{rowdata}: a table with metadata on the 
+  count table's rows, i.e., on the genes, and
+\item a design formula, which tells which factors in the 
+  column metadata table specify the experimental design and 
+  how these factors should be used in the analysis. We specify \Rfunction{\lowtilde{} patient + treatment},
+which means that we want to test for the effect of treatment (the last factor), controlling
+for the effect of patient (the first factor). You can use R's formula notation to express any
+experimental design that can be described within an ANOVA-like framework.
+\end{itemize}
+
+To now construct the data object from the matrix of counts and the metadata table, we use:
+
+<<makeddsfull>>=
+ddsFull <- DESeqDataSetFromMatrix(
+  countData = countdata,
+  colData = coldata,
+  design = ~ patient + treatment,
+  rowData = rowdata)
+ddsFull  
+@ 
+
+<<testCountSum, echo=FALSE>>=
+stopifnot(sum(assay(parathyroidGenesSE)) == sum(counts(ddsFull)))
+@ 
+
+\section{Running the DESeq2 pipeline}\label{sec:runDESeq}
+
+Here we will analyze a subset of the samples, namely those taken after 48 hours, 
+with either control or DPN treatment, taking into account the multifactor design. 
+
+\subsection{Preparing the data object for the analysis of interest}
+
+First we subset the relevant columns from the full dataset:
+
+<<subset>>=
+dds <- ddsFull[ , colData(ddsFull)$treatment %in% c("Control","DPN") & 
+                  colData(ddsFull)$time == "48h" ]
+@
+
+Sometimes it is necessary to ``refactor'' the factors, in case that levels
+have been dropped. (Here, for example, the treatment factor still contains
+the level ``OHT'', but no sample to this level.)
+
+<<refactor>>=
+dds$patient <- factor(dds$patient)
+dds$treatment <- factor(dds$treatment)
+@
+
+It will be convenient to make sure that \texttt{Control} is the \emph{first} level in the
+treatment factor, so that the $\log_2$ fold changes are calculated as treatment over
+control. The function \Rfunction{relevel} achieves this:
+
+<<relevel>>=
+dds$treatment <- relevel( dds$treatment, "Control" )
+@
+
+% We specify the design (although
+% this was already added when we constructed \Robject{dds}), and put
+% the main variable of interest at the end of the formula (because the functions
+% for extracting results and plotting fold changes take the last variable
+% in the design formula by default).
+
+% <<multifactor, cache=TRUE>>=
+% design(dds) <- ~ patient + treatment
+% @
+
+A quick check whether we now have the right samples:
+
+<<multifactorColData>>=
+colData(dds)
+@ 
+
+\subsection{Running the pipeline}
+
+With the data object prepared, the \Rpackage{DESeq2} analysis can now be run with a single
+call to the function \Rfunction{DESeq}:
+
+<<runDESeq>>=
+dds <- DESeq(dds)
+@ 
+
+\subsection{Inspecting the results table}
+
+The results for the last variable in the design formula, in our
+case the \Rcode{treatment} variable, can be extracted using the
+\Rfunction{results} function. 
+
+<<extractResults>>=
+res <- results(dds)
+@
+
+As \Robject{res} is a \Robject{DataFrame} object, it carries metadata with
+information on the meaning of the columns:
+
+<<resCols>>=
+mcols(res)
+@
+
+The first column, \Robject{baseMean}, is a just the average of the normalized count values,
+taken over all samples. The remaining four columns refer to a specific
+\emph{contrast}, namely the comparison of the levels \emph{DPN}
+versus \emph{Control} of the factor variable \emph{treatment}. See the help page 
+for \Rfunction{results} (by typing \Rfunction{?results}) for information
+on how to obtain other contrasts.
+
+The column \Robject{log2FoldChange} is the effect size estimate. It tells us 
+how much the gene's expression seems to have changed due to treatment with DPN
+in comparison to control. This value is reported on a logarithmic scale to base 2: for example, a $\log_2$ fold change
+of 1.5 means that the gene's expression is increased by a factor of $2^{1.5}\approx 2.82$.
+
+Of course, this estimate has an uncertainty associated with it, which is available in the
+column \Robject{lfcSE}, the standard error estimate for the log2 fold change estimate.  We
+can also express the uncertainty of a particular effect size estimate as the result of a
+statistical test. The purpose of a test for differential expression is to test whether the
+data provides sufficient evidence to conclude that this value is really different from
+zero (and that the sign is correct).  DESeq2 performs for each gene a \emph{hypothesis
+  test} to see whether evidence is sufficient to decide against the \emph{null hypothesis}
+that there is no effect of the treatment on the gene and that the observed difference
+between treatment and control was merely caused by experimental variability (i.\,e., the
+type of variability that you can just as well expect between different samples in the same
+treatment group). As usual in statistics, the result of this test is reported as a 
+\emph{p value}, and it is found in the column \Robject{pvalue}. (Remember that a p value indicates
+the probability that a fold change as strong as the observed one, or even stronger, would
+be seen under the situation described by the null hypothesis.)
+
+Finally, we note that a subset of the p values in \Robject{res} are \Robject{NA} (``not
+available''). This is \Rfunction{DESeq}'s way of reporting that all counts for this gene
+were zero, and hence not test was applied. 
+
+\begin{question}
+  How could you check to see if the \Robject{baseMean} is the mean of raw counts
+  or the mean of normalized counts?
+\end{question}
+\begin{answer}
+  The raw counts and normalized counts of a \Rclass{DESeqDataSet} object are 
+  available via the accessor function \Rfunction{counts}, which has an argument
+  \Robject{normalized}, which defaults to \Robject{FALSE}.
+
+<<checkBaseMean>>=
+all.equal(res$baseMean, rowMeans(counts(dds)))
+all.equal(res$baseMean, rowMeans(counts(dds,normalized=TRUE)))
+@
+
+\end{answer}
+
+\subsection{Multiple testing}
+Novices in high-throughput biology often assume that thresholding these p values at 0.05,
+as is often done in other settings, would be appropriate -- but it is not. We briefly
+explain why:
+
+There are \Sexpr{ sum( res$pvalue < 0.05, na.rm=TRUE ) } genes with a p value below
+0.05 among the \Sexpr{ sum( !is.na(res$pvalue) ) } genes, for which the test succeeded
+in reporting a p value:
+
+<<rawpvalue>>=
+sum( res$pvalue < 0.05, na.rm=TRUE )
+table( is.na(res$pvalue) )
+@
+
+Now, assume for a moment that the null hypothesis is true for all genes, i.e., no
+gene is affected by the treatment with DPN. Then, by the definition of \emph{p value},
+we expect up to 5\% of the genes to have a p value below 0.05. This amounts to
+\Sexpr{round( sum( !is.na(res$pvalue) ) * 0.05 )} genes.
+If we just considered the list of genes with a p value below 0.05 as differentially
+expressed, this list should therefore be expected to contain up to 
+$\Sexpr{round( sum( !is.na(res$pvalue) ) * 0.05)} / \Sexpr{sum( res$pvalue < 0.05, na.rm=TRUE ) } = 
+ \Sexpr{round( sum( !is.na(res$pvalue) ) * 0.05 / sum( res$pvalue < 0.05, na.rm=TRUE ) * 100, 0 )}$\% 
+false positives!
+
+ \Rpackage{DESeq2}
+uses the so-called Benjamini-Hochberg (BH) adjustment; in brief, this method calculates
+for each gene an \emph{adjusted p value} which answers the following question: if one
+called significant all genes with a p value less than or equal to this gene's p value threshold,
+what would be the fraction of false positives (the \emph{false discovery rate}, FDR) among
+them (in the sense of the calculation outlined above)? These values, called the BH-adjusted
+p values, are given in the column \Robject{padj} of the \Robject{results} object.
+
+Hence, if we consider a fraction of 10\% false positives acceptable, we can consider all
+genes with an \emph{adjusted} p value below 10\%=0.1 as significant. How many such genes
+are there?
+
+<<adjpvalue>>=
+sum( res$padj < 0.1, na.rm=TRUE )
+@
+
+We subset the results table to these genes and then sort it by the log2-fold-change
+estimate to get the significant genes with the strongest down-regulation
+
+<<strongGenes>>=
+resSig <- res[ which(res$padj < 0.1 ), ]
+head( resSig[ order( resSig$log2FoldChange ), ] )
+@
+
+and with the strongest upregulation
+
+<<strongGenesUp>>=
+tail( resSig[ order( resSig$log2FoldChange ), ] )
+@
+
+\begin{question}
+  What is the proportion of down- and up-regulation among
+  the genes with adjusted p value less than 0.1?
+\end{question}
+\begin{answer}
+
+<<proportionSigGenes>>=
+table(sign(resSig$log2FoldChange))
+@ 
+  
+\end{answer}
+
+\subsection{Diagnostic plots}
+
+A so-called MA plot provides a useful overview for an experiment
+with a two-group comparison:
+
+<<plotMA1,fig.cap="The MA-plot shows the $\\log_2$ fold changes from the treatment over the mean of normalized counts, i.e. the average of counts normalized by size factor. The \\Rpackage{DESeq2} package incorporates a prior on $\\log_2$ fold changes, resulting in moderated estimates from genes with low counts and highly variable counts, as can be seen by the narrowing of spread of points on the left side of the plot.">>=
+plotMA(dds, ylim = c( -1.5, 1.5 ) )
+@ 
+
+The plot (Fig.\ \ref{plotMA1}) represents each gene with a dot. The $x$ axis
+is the average expression over all samples, the $y$ axis the $\log_2$
+fold change between treatment and control. Genes with an adjusted p value
+below a threshold (here 0.1, the default) are shown in red. 
+ 
+This plot demonstrates that only genes with an average normalized count above 10 contain
+sufficient information to yield a significant call, and only above about 300
+counts can smaller fold-changes become significant. 
+
+Also note \Rpackage{DESeq2}'s shrinkage estimation of log fold changes (LFCs): When count values
+are too low to allow an accurate estimate of the LFC, the value is ``shrunken'' towards
+zero to avoid that these values, which otherwise would frequently be 
+unrealistically large, dominate the top-ranked log fold changes.
+
+Whether a gene is called significant depends not only on its LFC but also on its
+within-group variability, which \Rpackage{DESeq2} quantifies as the \emph{dispersion}. For 
+strongly expressed genes, the dispersion can be understood as a squared coefficient of
+variation: a dispersion value of 0.01 means that the gene's expression tends to differ by
+typically $\sqrt{0.01}=10\%$ between samples of the same treatment group. For weak genes,
+the Poisson noise is an additional source of noise, which is added to the dispersion.
+
+The function \Rfunction{plotDispEsts} visualizes \Rpackage{DESeq2}'s dispersion estimates:
+
+<<dispPlot,fig.cap='Plot of dispersion estimates.  See text for details.'>>=
+plotDispEsts( dds )
+@
+
+The black dots are the dispersion estimates for each gene as obtained by considering
+the information from each gene separately. Unless one has many samples, these
+values fluctuate strongly around their true values. Therefore, we fit the red
+trend line, which shows the dispersions' dependence on the mean, and then shrink each
+gene's estimate towards the red line to obtain the final estimates (blue circles)
+that are then used in the hypothesis test.
+
+\begin{question}
+  How could you change the MA-plot so as to color those genes
+  with adjusted p-value less than 0.5 instead of 0.1?
+\end{question}
+\begin{answer}
+  
+<<plotMApadjchange,fig.cap="The MA-plot with red points indicating adjusted p value less than 0.5.">>=
+plotMA(dds, ylim = c( -1.5, 1.5) )
+@
+
+See Figure~\ref{plotMApadjchange}.
+
+\end{answer}
+
+Another useful diagnostic plot is the histogram of the p values (Fig.~\ref{pvalHist}).
+
+<<pvalHist,fig.cap="Histogram of the p values returned by the test for differential expression.">>=
+hist( res$pvalue, breaks=100     )
+@
+
+\begin{question}
+Revisit the discussion about p values and multiple testing in the previous section. Which
+part of the histogram is caused by genes that are called significant? And which
+part is caused by those that are truly significant? Why are there ``spikes''
+at intermediate values?
+\end{question}
+\begin{answer}
+Genes that are not differentially expressed have p values that are approximately
+uniformly distributed between 0 and 1. This gives rise to the floor of bars of equal 
+heights. The truly differentially expressed genes give rise to the tall bar(s)
+at the very left -- but only to that part of the bars that raises above the
+uniform floor. Of course, we cannot know which of the genes in these 
+tall bars are true ones and which are not. When only looking at the bars to the
+left of our chosen p value cut-off, the ratio of ``floor'' area to total area
+provides an estimate of the false discovery rate. This is a graphical
+way of understanding FDR.
+
+The rule that p values from null cases are uniform is true only for continuous
+test statistics. However, for genes with low counts, the fact that we are working with
+integer counts becomes noticeable, and gives rise to the spikes at intermediate 
+p values.
+\end{answer}
+
+\section{Independent filtering}
+
+The MA plot (Figure~\ref{plotMA1}) highlights an important property of RNA-Seq data.
+For weakly expressed genes, we have no chance of seeing differential
+expression, because the low read counts suffer from so high Poisson
+noise that any biological effect is drowned in the uncertainties from the
+read counting. The MA plot suggests that for genes with less than one or two
+counts per sample, averaged over all samples, there is no real inferential
+power. We loose little if we filter out these genes:
+
+<<filter>>=
+filterThreshold <- 2.0
+keep <- rowMeans( counts( dds, normalized=TRUE ) ) > filterThreshold
+table( keep )
+@
+
+Note that none of the genes below the threshold had a significant
+adjusted p value
+<<adjFilter>>=
+min( res$padj[!keep], na.rm=TRUE )
+@
+
+At first sight, there may seem to be little benefit in filtering out these genes. After
+all, the test found them to be non-significant anyway. However, these genes have an
+influence on the multiple testing adjustment, whose performance improves if such genes are
+removed. Compare:
+
+<<padjFilterCmp>>=
+table( p.adjust( res$pvalue, method="BH" ) < .1 )
+table( p.adjust( res$pvalue[keep], method="BH" ) < .1 )
+@
+
+By removing the weakly-expressed genes from the input to the FDR procedure, we
+have found more genes to be significant among those which we kept, and so
+improved the power of our test. This approach is known as \emph{independent
+filtering}. 
+
+The term \emph{independent} highlights an important caveat. Such filtering is permissible
+only if the filter criterion is independent of the actual test
+statistic~\cite{Bourgon:2010:PNAS}. Otherwise, the filtering would invalidate the test and
+consequently the assumptions of the BH procedure.  This is why we filtered on the average
+over \emph{all} samples: this filter is blind to the assignment of samples to the
+treatment and control group and hence independent.
+ 
+\begin{question}
+Redo the histogram as in Figure~\ref{pvalHist}, now only using
+the genes that passed the filtering. What happened to the spikes
+at intermediate values? 
+\end{question}
+\begin{answer}
+Run  
+<<pvalHistFilt,fig.cap="Histogram of the p values returned by the test for differential expression.">>=
+hist( res$pvalue[keep], breaks=100 )
+@
+
+See Figure~\ref{pvalHistFilt}. As explained before, the spikes were caused
+by genes with low counts. Having removed these, our p value histogram
+now looks smoother.
+
+In this vignette, we have determined the value for \Robject{filterThreshold},
+\Sexpr{signif(filterThreshold, 3)}, by looking at Figure~\ref{plotMA1}. More formal,
+automatable ways exist; if you are interested, please have a look at the vignette
+\emph{Diagnostics for independent filtering} in the \Rpackage{genefilter} package.
+
+\end{answer}
+   
+
+\subsection{Adding gene names}
+
+Our result table only uses Ensembl gene IDs, but gene names may be more
+informative. Bioconductor's annotation packages help with mapping various
+ID schemes to each other.
+
+We load the annotation package \Rpackage{org.Hs.eg.db}:
+
+<<loadOrg>>=
+library( "org.Hs.eg.db" )
+@
+
+This is the organism annotation package (``org'') for \emph{Homo sapiens}
+(``Hs''), organized as an \Rpackage{AnnotationDbi} package (``db''), using
+Entrez Gene IDs (``eg'') as primary key.
+
+To get a list of all available key types, use
+<<keyType>>=
+columns(org.Hs.eg.db)
+@
+
+Converting IDs with the native functions from the \Rpackage{AnnotationDbi}
+package is currently a bit cumbersome, so we provide the following convenience function
+(without explaining how exactly it works):
+
+<<convertIDs>>=
+convertIDs <- function( ids, fromKey, toKey, db, ifMultiple=c( "putNA", "useFirst" ) ) {
+   stopifnot( inherits( db, "AnnotationDb" ) )
+   ifMultiple <- match.arg( ifMultiple )
+   suppressWarnings( selRes <- AnnotationDbi::select( 
+      db, keys=ids, keytype=fromKey, cols=c(fromKey,toKey) ) )
+   if( ifMultiple == "putNA" ) {
+      duplicatedIds <- selRes[ duplicated( selRes[,1] ), 1 ]   
+      selRes <- selRes[ ! selRes[,1] %in% duplicatedIds, ] }
+   return( selRes[ match( ids, selRes[,1] ), 2 ] )
+}
+@
+
+This function takes a list of IDs as first argument and their key type as the
+second argument. The third argument is the key type we want to convert to,
+the fourth is the \Rclass{AnnotationDb} object to use. Finally, the last
+argument specifies what to do if one source ID maps to several target IDs: should 
+the function return an NA or simply the first of the multiple IDs?
+
+To convert the Ensembl IDs in the rownames of \Robject{res} to gene symbols
+and add them as a new column, we use:
+<<addSymbols>>=
+res$symbol <- convertIDs( row.names(res), "ENSEMBL", "SYMBOL", org.Hs.eg.db )
+res
+@
+
+% \subsection{Gene annotations}
+% 
+% <<geneAnnot, cache=TRUE>>=
+% library("biomaRt")
+% ensembl = useMart("ensembl", dataset = "hsapiens_gene_ensembl")
+% res$ensembl <- sapply(strsplit(rownames(res),split="\\+"),"[",1)
+% entrezmap <- getBM(attributes = c("ensembl_gene_id", "entrezgene"), 
+%                      filters = "ensembl_gene_id", 
+%                      values = res$ensembl, 
+%                      mart = ensembl)
+% res$entrez <- entrezmap[match(res$ensembl, entrezmap[,1]),2]
+% hgncmap <- getBM(attributes = c("ensembl_gene_id", "hgnc_symbol"), 
+%                    filters = "ensembl_gene_id", 
+%                    values = res$ensembl, 
+%                    mart = ensembl)
+% res$hgnc_symbol <- hgncmap[match(res$ensembl, hgncmap[,1]),2]
+% @ 
+
+Finally, we note that you can easily save the results table in a CSV file,
+which you can then load with a spreadsheet program such as Excel:
+
+<<writeCSV>>=
+write.csv( as.data.frame(res), file="results.csv" )
+@
+
+\section{Downstream analyses}
+
+A list of gene names is no final result. We demonstrate two possible
+further analysis steps.
+
+\subsection{Gene set enrichment analysis}
+
+Do the genes with a strong up- or down-regulation have something in
+common? We perform next a gene-set enrichment analysis (GSEA) to
+examine this question.
+
+We use the gene sets in the Reactome database
+
+<<loadReactome>>=
+library( "reactome.db" )
+@
+
+This database works with Entrez IDs, so we add a column with such IDs, 
+using our \Rfunction{convertIDs} function:
+
+<<addEntrez>>=
+res$entrez <- convertIDs( row.names(res), "ENSEMBL", "ENTREZID", org.Hs.eg.db )
+@
+
+Next, we subset the results table, \Robject{res}, to only those genes for
+which the Reactome database has data (i.e, whose Entrez ID we
+find in the respective key column of \Robject{reactome.db}) and
+for which the test gave a p value that was not NA.
+
+<<subsetTores2>>=
+res2 <- res[ res$entrez %in% keys( reactome.db, "ENTREZID" ) & 
+   !is.na( res$pvalue) , ]
+head(res2)
+@
+
+Using \Rfunction{select}, a function from \Rpackage{AnnotationDbi} for querying
+database objects, we get a table with the mapping from Entrez IDs to
+Reactome Path IDs
+
+<<queryReactome>>=
+reactomeTable <- AnnotationDbi::select( reactome.db, keys=res2$entrez, 
+   keytype="ENTREZID", columns=c("ENTREZID","REACTOMEID") )
+head(reactomeTable)
+@
+
+The next code chunk transforms this table into an \emph{incidence matrix}. This is
+a boolean matrix with one row for each Reactome Path and one column for each 
+gene in \Robject{res2}, which tells us which genes are members of which
+Reactome Paths. (If you want to understand how this chunk exactly works, 
+read up about the \Rfunction{tapply} function.)
+
+<<CreateIncidenceMatrix>>=
+incm <- do.call( rbind, with(reactomeTable, tapply( 
+   ENTREZID, factor(REACTOMEID), function(x) res2$entrez %in% x ) ))
+colnames(incm) <- res2$entrez
+
+str(incm)
+@
+%
+% WH suggests that the following code is perhaps easier to understand (and 
+% faster) for the construction of 'incm'
+% ft2mat = function(x, y) {
+%    ux = unique(x)
+%    uy = unique(y)
+%    im = matrix(FALSE, nrow=length(ux), ncol=length(uy), dimnames=list(ux, uy))
+%    im[ cbind(x, y) ] = TRUE
+%    return(im)
+% }
+% incm = with(reactomeTable, ft2mat(REACTOMEID, ENTREZID))
+
+We remove all rows corresponding to Reactome Paths with less than 5 assigned genes.
+
+<<PruneIncm>>=
+incm <- incm[ rowSums(incm) >= 5, ]
+@
+
+To test whether the genes in a Reactome Path behave in a special way in our experiment,
+we perform $t$-tests to see whether the average of the genes' $\log_2$ fold change values
+are different from zero. If so, we can say that our treatment tends to upregulate
+(or downregulate) the genes in the category. To facilitate the computations, we define a
+little helper function:
+
+<<testFun>>=
+testCategory <- function( reactomeID ) {
+  isMember <- incm[ reactomeID, ]
+  reactomeName=reactomePATHID2NAME[[reactomeID]]
+  reactomeName=ifelse(is.null(reactomeName),reactomeID,reactomeName)
+  data.frame( 
+     reactomeID = reactomeID,
+     numGenes = sum( isMember ),
+     avgLFC = mean( res2$log2FoldChange[isMember] ),
+     strength = sum( res2$log2FoldChange[isMember] ) / sqrt(sum(isMember)),
+     pvalue = t.test( res2$log2FoldChange[ isMember ] )$p.value,
+     reactomeName = reactomeName ) }
+@
+
+The function can be called with a Reactome Path ID:
+
+<<testTestFun>>=
+testCategory("4419969")
+@
+
+As you can see the function not only performs the $t$ test and returns the p value
+but also lists other useful information such as the number of genes in the 
+category, the average log fold change, a ``strength'' measure (see below) and
+the name with which Reactome describes the Path.
+
+We call the function for all Paths in our incidence matrix and collect
+the results in a data frame:
+
+<<runGSEA,cache=TRUE>>=
+reactomeResult <- do.call( rbind, lapply( rownames(incm), testCategory ) )
+@
+
+
+As we performed many tests, we should again use a multiple testing adjustment.
+
+
+<<padjGSEA>>=
+reactomeResult$padjust <- p.adjust( reactomeResult$pvalue, "BH" )
+@
+
+This is a list of Reactome Paths which are significantly differentially expressed
+in our comparison of DPN treatment with control, sorted according to sign and strength
+of the signal:
+
+{\small
+<<GSEAresult>>=
+reactomeResultSignif <- reactomeResult[ reactomeResult$padjust < 0.05, ]
+reactomeResultSignif[ order(reactomeResultSignif$strength), ]
+@
+}
+Note that such lists need to be interpreted with care, and a grain of salt. Which of these
+categories make sense, given the biology of the experiment?
+
+
+\subsection{Nearest peak to a differentially expressed gene}
+
+The RNA-Seq experiment analyzed above provides a list of genes which
+have responded to a selective estrogen-receptor-beta agonist. We can investigate
+whether we find estrogen receptor binding sites in the vicinity of 
+the gene with the highest fold induction. 
+In order to match differentially expressed genes to 
+other experiment data, we will use annotated binding sites of estrogen 
+receptor alpha from the ENCODE project. It is not necessarily the case
+that these annotated binding sites are actually functional in the cell 
+lines of the RNA-Seq experiment or biologically relevant as the 
+alpha and beta subtypes are distinct proteins transcribed from different 
+genes; here we only use these binding site data for demonstration purposes. 
+
+Let us consider a particular gene with a low p value.
+The \Rfunction{rowData} function provides us with all the information
+about the gene model; each of the exons is represented as a \Rclass{GRanges},
+and these are tied together as a \Rclass{GRangesList}. We use the function
+\Rfunction{range} to extract the entire range of the gene, from the start of
+the left-most exon to the end of the right-most exon. This is all the
+information we need in order to find the nearest binding site.
+
+<<topDEGene>>=
+deGeneID <- "ENSG00000099194"
+res[deGeneID,]
+deGene <- range(rowData(dds[deGeneID,])[[1]])
+names(deGene) <- deGeneID
+deGene
+@ 
+
+We would like to compare the location of this gene with the location
+of annotated estrogen receptor binding sites, provided by the UCSC
+Genome Browser. We must first alter the sequence name (the chromosome name)
+of the differentially expressed gene, as the Ensembl gene annotation does not use the 
+``chr'' prefix, which the UCSC chromosomes are annotated with.
+(Note that we ignore here another complication, which is that the Ensembl sequence ``MT''
+corresponds to the UCSC's sequence ``chrM''.)
+We use the \Rfunction{paste0} function, which concatenates
+the character vectors provided without using any separating characters.
+We then create a range which is 10 Mb to the left and right of
+the start of the \Robject{deGene} object.
+
+<<defineRange>>=
+as.character(seqnames(deGene))
+ucscChrom <- paste0("chr",as.character(seqnames(deGene)))
+ucscRanges <- ranges(flank(deGene,width=10e6,both=TRUE))
+subsetRange <- GRanges(ucscChrom, ucscRanges)
+subsetRange
+@
+
+We now provide code which would download a track from the UCSC Genome Browser, in our case
+a track containing transcription factor binding sites obtained from ChIP-Seq
+experiments across various cell lines, generated by the ENCODE project. 
+
+The track names and table names must match a track name provided by the 
+UCSC Genome Browser. For more information on these steps, see the 
+detailed instructions in the vignette of the useful Bioconductor package
+\Rpackage{rtracklayer}.
+
+<<downloadERBS>>=
+##
+## Please do not run this code if you do not have an internet connection, 
+## alternatively use the local file import in the next code chunk.
+##
+library( "rtracklayer" )
+trackName <- "wgEncodeRegTfbsClusteredV2"
+tableName <- "wgEncodeRegTfbsClusteredV2"
+trFactor <- "ERalpha_a"
+mySession <- browserSession()
+ucscTable <- getTable(ucscTableQuery(mySession, track=trackName,
+                                     range=subsetRange, table=tableName,
+                                     name=trFactor))
+@ 
+
+Whether to use a cutoff on the provided peak scores at this step, 
+or what scores cutoff to use, depends on your experience 
+with the specific transcription factor and the ChIP-Seq 
+experiments used to define these peaks. It often makes sense to
+visualize tracks in a genome browser in order to get a sense of the
+qualitative difference between peaks of different scores.
+
+We create a \Rclass{GRanges} object, \Robject{peaks}, from the table
+obtained from UCSC, and then we convert the chromosome names 
+back to the Ensembl style using the global substitute function,
+\Rfunction{gsub}. Finally, we enforce that the sequence levels of the 
+peaks match the sequence levels of the differential expressed gene,
+which is necessary for performing the nearest matching in the following 
+code chunk.
+
+<<ERBS2Peaks>>=
+peaks <- with(ucscTable, GRanges(chrom, IRanges(chromStart, chromEnd), 
+                                 score=score))
+seqlevels(peaks) <- gsub("chr(.+)","\\1",seqlevels(peaks))
+seqlevels(peaks) <- seqlevels(deGene)
+@ 
+
+Now we have two \Rclass{GRanges} objects, defined over the same chromosomes,
+so we can use the \Rfunction{distanceToNearest} 
+function from the package \Rpackage{GRanges}. This provides a 
+\Rclass{Hits} object, which contains the matches between the ``query'' 
+and the ``subject'', the first and second arguments to the function, 
+as well as the distance from the query to the subject.
+As we only have a single query, there should only be one nearest
+range in the subject. See the documentation via \Rfunction{?distanceToNearest}
+and \Rfunction{?Hits} for more information on the options for the
+this matching step.
+
+<<nearestPeakDo, cache=TRUE, echo=FALSE>>=
+# suppress warning which exists for BioC 2.12 of changes to distance()
+suppressWarnings({d2nearest <- distanceToNearest(deGene, peaks)})
+@
+<<nearestPeakShow, eval=FALSE>>=
+d2nearest <- distanceToNearest(deGene, peaks)
+@
+
+\begin{question}
+  What is the distance from the differentially expressed gene to all the peaks?
+\end{question}
+\begin{answer}
+<<distanceShow, eval=FALSE>>=
+distance(deGene, peaks)
+@ 
+<<distanceDo, echo=FALSE>>=
+suppressWarnings({distance(deGene, peaks)})
+@ 
+\end{answer}
+
+We can now examine the object \Robject{d2nearest}. This tells us that the 
+nearest peak is \Sexpr{as.data.frame(d2nearest)$distance[1]} base pairs
+from the differential expressed gene. 
+
+<<distanceToNearest>>=
+d2nearest
+@ 
+
+The function \Rfunction{subjectHits} is used to extract the index of the 
+closest hit in the \Robject{peaks} object.
+
+<<nearestPeakOut>>=
+deGene
+peaks[subjectHits(d2nearest)]
+@ 
+
+Is \Sexpr{as.data.frame(d2nearest)$distance[1]} base pairs unexpectedly close?
+Here we make a simple plot of the starting points of the peaks and gene
+along the chromosome, to get a sense of the distribution of peaks and
+how surprised we should be with the distance of the nearest.
+To identify the nearest peak, we construct a logical vector \Robject{peakNearest},
+which can be used to change the y value and the color of the point
+corresponding to the nearest peak.
+
+<<plotPeaksAndGene, fig.width=6, fig.height=4, fig.cap="A 2 Mb genomic range showing the location of the differentially expressedgene (labelled 'g'), and the peaks (labelled 'p'). ">>=
+plotRange <- start(deGene) + 1e6 * c(-1,1)
+peakNearest <- ( seq_along(peaks) == subjectHits(d2nearest) )
+plot(x=start(peaks), y=ifelse(peakNearest,.3,.2),
+     ylim=c(0,1), xlim=plotRange, pch='p',
+     col=ifelse(peakNearest,"red","grey60"),
+     yaxt="n", ylab="",
+     xlab=paste("2 Mb on chromosome",as.character(seqnames(deGene))))
+points(x=start(deGene),y=.8,pch='g')
+@ 
+
+<<calculateSumForCaption, echo=FALSE>>=
+plotGRange <- GRanges(seqnames(peaks[1]),IRanges(plotRange[1],plotRange[2]))
+numPeaksInPlotRange <- sum(peaks %over% plotGRange)
+@ 
+
+Again, the biological relevance of the distances between peaks and genes
+is another matter, especially considering the data are from different
+sources. An important consideration when investigating the distribution of distances 
+between two sets of genomic features, is how the individual sets 
+cluster along the genome.
+
+\begin{question}
+  Are the peaks relatively uniformly distributed?
+\end{question}
+\begin{answer}
+  
+  We can answer this question by investigating the inter-peak distances.
+  As all of our peaks are on the same chromosome, we just sort the 
+  peak starts and subtract the 2nd from the 1st, the 3rd from the 2nd, etc.
+  Then we call the \Rfunction{summary} function which provides the mean
+  and median. Note that the mean is constricted: it must be equal to the 
+  total span divided by the number of inter-peak distances. The median distance
+  is about one quarter of the mean, so the peaks tend to cluster. You can also verify this
+  by plotting the histogram of \Robject{peakDists}.
+  
+<<peakDists>>=
+  peakDists <- diff(sort(start(peaks)))
+  summary(peakDists)
+  mean(peakDists)
+@ 
+\end{answer}
+
+\section{Working with rlog-transformed data}
+
+\subsection{The rlog transform}
+
+Many common statistical methods for exploratory analysis of multidimensional
+data, especially methods for clustering and ordination (e.\,g., principal-component
+analysis and the like), work best for (at least approximately)
+homoskedastic data; this means that the variance of an observable (i.e., here,
+the expression strength of a gene) does not depend on the mean. In RNA-Seq data, 
+however, variance grows with the mean. 
+For example, if one performs PCA directly on a matrix of normalized read counts, the result
+typically depends only on the few most strongly expressed genes because they show the
+largest absolute differences between samples. A simple and often used strategy to
+avoid this is to take the logarithm of the normalized count values; however, now
+the genes with low counts tend to dominate the results because, due to the strong Poisson
+noise inherent to small count values, they show the strongest relative differences 
+between samples.
+
+As a solution, \Rpackage{DESeq2} offers the \emph{regularized-logarithm transformation},
+or \emph{rlog} for short. For genes with high counts, the rlog transformation
+differs not much from an ordinary $\log_2$ transformation. For genes with lower counts, however,
+the values are shrunken towards the genes' averages across all samples. Using
+an empirical Bayesian prior in the form of a \emph{ridge penality}, this is done such
+that the rlog-transformed data are approximately homoskedastic.
+
+The function \Rfunction{rlogTransform} returns a \Rclass{SummarizedExperiment} object
+which contains the rlog-transformed values in its \Rclass{assay} slot:
+
+<<rld, cache=TRUE>>=
+rld <- rlogTransformation(dds)
+head( assay(rld) )
+@ 
+
+To show the effect of the transformation, we plot the first sample against the 
+second, first simply using the \Rfunction{log2} function (after adding 1,
+to avoid taking the log of zero), and then using the rlog-transformed values.
+
+
+<<rldPlot,fig.width=10,fig.height=5,fig.cap="Scatter plot of sample 2 versus sample 1. Left: using an ordinary $\\log_2$ transformation. Right: Using the rlog transformation.">>=
+par( mfrow = c( 1, 2 ) )
+plot( log2( 1+counts(dds, normalized=TRUE)[, 1:2] ), col="#00000020", pch=20, cex=0.3 )
+plot( assay(rld)[, 1:2], col="#00000020", pch=20, cex=0.3 )
+@
+
+Note that, in order to make it easier to see where several points are plotted on top of each other,
+we set the plotting color to a semi-transparent black (encoded as \Rfunction{\#00000020})
+and changed the points to solid disks (\Rfunction{pch=20}) with reduced size
+(\Rfunction{cex=0.3})\footnote{The function \Rfunction{heatscatter} from the package
+  \Rpackage{LSD} offers a colourful alternative.}.
+
+In Figure~\ref{rldPlot}, we can see how genes with low counts seem to be excessively variable
+on the ordinary logarithmic scale, while the rlog transform compresses differences for genes
+for which the data cannot provide good information anyway.
+
+\subsection{Sample distances}
+
+A useful first step in an RNA-Seq analysis is often to assess overall 
+similarity between samples: Which samples are similar to each other, 
+which are different? Does this fit to the expectation from the 
+experiment's design?
+
+We use the R function \Rfunction{dist} to calculate the Euclidean distance
+between samples. To avoid that the distance measure is dominated by a few highly variable genes,
+and have a roughly equal contribution from all genes, we use it on the rlog-transformed data:
+
+<<euclDist>>=
+sampleDists <- dist( t( assay(rld) ) )
+sampleDists
+@
+
+Note the use of the function \Rfunction{t} to transpose the data matrix. We need
+this because \Rfunction{dist} calculates distances between data \emph{rows} and
+our samples constitute the columns.
+
+We visualize the distances in a heatmap, using the function \Rfunction{heatmap.2} from
+the \Rpackage{gplots} package.
+<<sampleDistHeatmap,fig.cap="Heatmap of Euclidean sample distances after rlog transformation.">>=
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- paste( colData(rld)$treatment, 
+   colData(rld)$patient, sep="-" )
+   
+library( "gplots" )   
+heatmap.2( sampleDistMatrix, trace="none" )
+@
+
+Note that we have changed the row names of the distance matrix to contain
+treatment type and patient number instead of sample ID, so that we have
+all this information in view when looking at the heatmap 
+(Fig.~\ref{sampleDistHeatmap}).
+
+\begin{question}
+  Some people find the colour scheme used in Figure~\ref{sampleDistHeatmap} ugly. Make a
+  better version. \emph{Hint:} Look at the sequential colour schemes in the
+  \Rpackage{RColorBrewer} package and at the \Rfunction{colorRampPalette} function.
+\end{question}
+\begin{answer}
+  
+<<betterheatmap,fig.cap="Using RColorBrewer to improve our heatmap">>=
+library("RColorBrewer")  
+colours = colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+heatmap.2( sampleDistMatrix, trace="none", col=colours)
+@
+
+See Figure~\ref{betterheatmap}.
+
+\end{answer}
+
+Another way to visualize sample-to-sample distances is a principal-components
+analysis (PCA). In this ordination method, the data points (i.e., here, the samples)
+are projected onto the 2D plane such that they spread out optimally (Fig.~\ref{samplePCA}).
+
+<<samplePCA,fig.cap="The same heatmap as in Figure \\ref{sampleDistHeatmap} but with better colours">>=
+print( plotPCA( rld, intgroup = c( "patient", "treatment") ) )
+@
+
+Here, we have used the function \Rfunction{plotPCA} which comes with \Rpackage{DESeq2}.
+The two terms specified as \Rfunction{intgroup} are column names from our
+sample data; they tell the function to use them to choose colours. 
+
+From both visualizations, we see that the differences between patients is much larger 
+than the difference between treatment and control samples of the same patient. This
+shows why it was important to account for this paired design (``paired'', because each
+treated sample is paired with one control sample from the \emph{same} patient). We did
+so by using the design formula \verb+!~ patient + treatment! when setting up the
+data object in the beginning. Had we used an un-paired analysis, by specifying
+only \verb!~ treatment!, we would not have found many hits, because then,
+the patient-to-patient differences would have drowned out any treatment effects.
+
+Here, we have performed this sample distance analysis towards the end of our analysis.
+In practice, however, this is a step suitable to give a first overview on the data.
+Hence, one will typically carry out this analysis as one of the first steps in an analysis.
+To this end, you may also find the function \Rfunction{arrayQualityMetrics}, from the
+equinymous package, useful. 
+
+% \fixme{@Mike: not for this lab, but perhaps we should add a
+%  method for \Rclass{SummarizedExperiment} to \Rpackage{arrayQualityMetrics}, would you
+%  like to send me a patch?} 
+
+\subsection{Gene clustering}
+
+In the heatmap of Fig.~\ref{sampleDistHeatmap}, the dendrogram at the side shows
+us a hierarchical clustering of the samples. Such a clustering can also be performed 
+for the genes. 
+
+Since the clustering is only relevant for genes that actually carry signal, one usually carries it out only for
+a subset of most highly variable genes. Here, for demonstration, let us select the 35 genes
+with the highest variance across samples:
+
+<<topVarGenes>>=
+library( "genefilter" )
+topVarGenes <- head( order( rowVars( assay(rld) ), decreasing=TRUE ), 35 )
+@
+
+The heatmap becomes more interesting if we do not look at absolute expression strength
+but rather at the amount by which each gene deviates in a specific sample from
+the gene's average across all samples. Hence, we center and scale each genes' values across
+samples, and plot a heatmap.
+
+<<geneHeatmap, fig.width=9, fig.height=9, fig.cap="Heatmap with gene clustering.">>=
+heatmap.2( assay(rld)[ topVarGenes, ], scale="row", 
+     trace="none", dendrogram="column", 
+     col = colorRampPalette( rev(brewer.pal(9, "RdBu")) )(255))
+@
+
+We can now see (Fig. \ref{geneHeatmap}) blocks of genes which covary across patients.
+Often, such a heatmap is insightful, even though here, seeing these variations
+across patients is of limited value because we are rather interested in the effects
+between the two samples from each patient. 
+
+\section{Advanced Questions}
+For these questions, we provide (and probably have) no solutions, advanced readers are encouraged to explore them.
+\begin{enumerate}
+\item \Rpackage{DESeq2} performs the shrinkage of the dispersion estimates by fitting
+  a parametric curve on the mean of normalized counts (cf.~Figure~\ref{dispPlot}). However,
+  one could argue that the biological variability of genes should not be a function of
+  counts, but of counts per gene length (i.\,e., expression level), and that regression on
+  that covariate should lead to a better fit.  Write your own version of the
+  \Rfunction{estimateDispersions} function to explore this question.
+\item What is the contribution of UTR length variations to the between-replicates
+  variability modelled by \Rpackage{DESeq2}? The read counting script (available 
+  in the vignette of \Rpackage{parathyroidSE}) uses all exons of the genes, which
+  includes UTRs. Would detection power be increased --or would
+  we preferentially detect different phenomena-- if we left out UTRs from the counting
+  (i.\,e. count reads that fall on coding exons only); or indeed, if we looked
+  only at UTRs?
+\end{enumerate}
+
+
+\bibliographystyle{unsrt}
+\bibliography{library}
+
+\newpage
+\section{Solutions}
+% \closeoutputstream{qna}
+% \input\jobname.qna
+
+\section{Session Info}
+
+As last part of this document, we call the function \Rfunction{sessionInfo}, which
+reports the version numbers of R and all the packages used in this session. It is
+good practice to always keep such a record as it will help to trace down what has
+happened in case that an R script ceases to work because a package has been
+changed in a newer version.
+
+<<sessInfo, echo=FALSE>>=
+sessionInfo()
+@
+
+<<relocateAnswers, echo=FALSE>>=
+relocateAnswers = function(con="DESeq2_parathyroid.tex"){
+  txt = readLines(con=con)
+  i1 = grep("\\begin{answer}", txt, fixed=TRUE)
+  i2 = grep("\\end{answer}",  txt, fixed=TRUE)
+  if(!((length(i1)==length(i2))&&all(i2>i1))) stop("\\begin{answer}/\\end{answer} macros are unbalanced.")
+  i = unlist(mapply(`:`, i1, i2))
+  res = txt[-i]
+  sol = txt[i]
+  dest = grep("\\section{Solutions}", res, fixed=TRUE)
+  if(length(dest)!=1) stop("\\section{Solutions} not found exactly once.")
+  res = c(res[1:dest], sol, res[(dest+1):length(res)])
+  writeLines(res, con=con)
+}
+@ 
+
+\end{document}
